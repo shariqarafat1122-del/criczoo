@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCallback } from "react";
 
+
 /* ═══════════════════════════════════════════════════════════════════
    TYPES
    ═══════════════════════════════════════════════════════════════════ */
@@ -762,10 +763,10 @@ export default function SquadPage() {
     fetchData();
   }, [fetchData]);
 
-   const handleBack = useCallback(() => {
-     if (window.history.length > 1) {
-     navigate(-1);
- } else {
+  const handleBack = useCallback(() => {
+  if (window.history.length > 1) {
+    navigate(-1);
+  } else {
     navigate("/", { replace: true });
   }
 }, [navigate]);
@@ -840,3 +841,4 @@ export default function SquadPage() {
     </div>
   );
 }
+
