@@ -52,6 +52,13 @@ export default async function handler(
       image: `https://static.cricbuzz.com/a/img/v1/i1/c${m[3]}.jpg`,
     }));
 
+    const filteredPlayers = players.filter(
+  (p) =>
+    p.name &&
+    p.name !== "default" &&
+    p.profile.includes("/profiles/")
+);
+
     return res.status(200).json({
       success: true,
       total: players.length,
