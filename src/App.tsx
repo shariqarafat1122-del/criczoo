@@ -14,7 +14,7 @@ export default function App() {
 
         <Route path="/live-score/:matchId" element={<LiveScorePage />}/>
         <Route path="/live-match/:matchId" element={<LiveMatch />}/>
-        <Route path="/train-tracking/:trainNo" element={<LiveMatch />}/>
+        <Route path="/train-tracking/:trainNo" element={<LiveTrainPage />}/>
         <Route path="*" element={<HomePage />} />
       </Routes>
     </BrowserRouter>
