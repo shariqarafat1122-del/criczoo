@@ -18,7 +18,7 @@ export default async function handler(
     }
 
     // Demo URL
-    const url = "https://www.railyatri.in/m/live-train-status/75302";
+    const url = `https://www.railyatri.in/m/live-train-status/${trainNo}`;
 
     const response = await fetch(url, {
       headers: {
