@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 
 /* ═══════════════════════════════════════════════════════════════════
    TYPES
@@ -725,7 +726,7 @@ const TeamSection: React.FC<{
 
 export default function SquadPage() {
   const params = useParams();
-  const router = useNavigate();
+  const navigate = useNavigate();
   const matchId = params?.matchId as string | undefined;
 
   const [data, setData] = useState<SquadResponse | null>(null);
@@ -761,13 +762,13 @@ export default function SquadPage() {
     fetchData();
   }, [fetchData]);
 
-  const handleBack = useCallback(() => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
-  }, [router]);
+   const handleBack = useCallback(() => {
+     if (window.history.length > 1) {
+     navigate(-1);
+ } else {
+    navigate("/", { replace: true });
+  }
+}, [navigate]);
 
   const handleTabChange = useCallback((tab: 0 | 1) => {
     setActiveTab(tab);
