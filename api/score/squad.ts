@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import * as cheerio from "cheerio";
 
 export default async function handler(
   req: VercelRequest,
@@ -8,27 +7,50 @@ export default async function handler(
   try {
     const { matchId } = req.query;
 
+    if (!matchId) {
+      return res.status(400).json({
+        success: false,
+        message: "matchId is required",
+      });
+    }
+
     const response = await fetch(
       `https://www.cricbuzz.com/cricket-match-squads/${matchId}`,
       {
         headers: {
-          "User-Agent": "Mozilla/5.0",
-          "Accept": "text/html",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/137 Safari/537.36",
+          Accept: "text/html",
         },
       }
     );
 
     const html = await response.text();
 
-    const $ = cheerio.load(html);
+    // Extract all self.__next_f.push(...) blocks
+    const scripts = [
+      ...html.matchAll(/self\.__next_f\.push\(([\s\S]*?)\);/g),
+    ];
 
-    // 👇 Yahan parsing code aayega
+    const blocks = scripts
+      .map((m) => m[1])
+      .filter(
+        (x) =>
+          x.includes("playingXIChange") ||
+          x.includes("fullName") ||
+          x.includes("teamName")
+      );
 
-    return res.status(200).json(players);
-
-  } catch (err: any) {
+    return res.status(200).json({
+      success: true,
+      totalScripts: scripts.length,
+      matchedBlocks: blocks.length,
+      blocks,
+    });
+  } catch (e: any) {
     return res.status(500).json({
-      error: err.message,
+      success: false,
+      error: e.message,
     });
   }
 }
