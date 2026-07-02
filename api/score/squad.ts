@@ -42,10 +42,12 @@ export default async function handler(
       );
 
   
-  .return res
+  const html = await response.text();
+
+   return res
   .status(200)
-  .setHeader("Content-Type", "text/plain")
-  .send(blocks.join("\n\n"));
+  .setHeader("Content-Type", "text/html")
+  .send(html);
     
   } catch (e: any) {
     return res.status(500).json({
