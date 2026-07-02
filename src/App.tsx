@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage";
 import LiveScorePage from "./pages/LiveScorePage";
 import LiveMatch from "./pages/LiveMatch";
 import LiveTrainPage from "./pages/TrainTracking";
+import Squad from './pages/Squad';
 
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/live-score/:matchId" element={<LiveScorePage />}/>
         <Route path="/live-match/:matchId" element={<LiveMatch />}/>
         <Route path="/train-tracking" element={<LiveTrainPage />}/>
+        <Route path="/team-squad/:matchId" element={<LiveTrainPage />}/>
         <Route path="*" element={<HomePage />} />
       </Routes>
     </BrowserRouter>
