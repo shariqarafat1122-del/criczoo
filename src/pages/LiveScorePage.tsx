@@ -1,6 +1,5 @@
-"use client";
-
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useParams } from "react-router-dom";
 
 /* ═════════════════════════════════════════════════════════════════════
    TYPES — mirrors the Cricbuzz scorecard API response
@@ -1452,11 +1451,12 @@ export default function LiveScorePage() {
   const [darkMode, setDarkMode] = useState(false);
   const [activeInnings, setActiveInnings] = useState(0);
   const [pageTab, setPageTab] = useState<PageTab>("scorecard");
+  const { matchId } = useParams<{ matchId: string }>();
 
   const fetchData = useCallback(async () => {
     try {
       setError(null);
-      const res = await fetch("/api/score/scorecard?matchId=150756", { cache: "no-store" });
+      const res = await fetch(`/api/score/scorecard?matchId=${matchId}`, { cache: "no-store" });
       if (!res.ok) {
         throw new Error(`API returned ${res.status}: ${res.statusText || "Unknown error"}`);
       }
