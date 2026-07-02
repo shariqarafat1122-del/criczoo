@@ -1,7 +1,4 @@
-// api/score/squad.ts
-
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import * as cheerio from "cheerio";
 
 export default async function handler(
   req: VercelRequest,
@@ -20,33 +17,27 @@ export default async function handler(
       `https://www.cricbuzz.com/cricket-match-squads/${matchId}`,
       {
         headers: {
-          "User-Agent": "Mozilla/5.0",
-          Accept: "text/html",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/137.0.0.0 Safari/537.36",
+          "Accept": "text/html",
         },
       }
     );
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: "Unable to fetch Cricbuzz Squad page",
+        error: `Cricbuzz returned ${response.status}`,
       });
     }
 
     const html = await response.text();
 
-    const $ = cheerio.load(html);
+    // Raw HTML return karega
+    return res
+      .status(200)
+      .setHeader("Content-Type", "text/html; charset=utf-8")
+      .send(html);
 
-    const nextData = $("#__NEXT_DATA__").html();
-
-    if (!nextData) {
-      return res.status(404).json({
-        error: "__NEXT_DATA__ not found",
-      });
-    }
-
-    const json = JSON.parse(nextData);
-
-    return res.status(200).json(json);
   } catch (error: any) {
     return res.status(500).json({
       error: error.message,
