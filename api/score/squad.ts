@@ -48,4 +48,18 @@ export default async function handler(
 
     const players = matches.map((m) => ({
       name: m[1],
-      profile: `https://www.cr
+      profile: `https://www.cricbuzz.com${m[2].replace(/\\\\/g, "")}`,
+      image: `https://static.cricbuzz.com/a/img/v1/i1/c${m[3]}.jpg`,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      total: players.length,
+      players,
+    });
+  } catch (e: any) {
+    return res.status(500).json({
+      error: e.message,
+    });
+  }
+}
