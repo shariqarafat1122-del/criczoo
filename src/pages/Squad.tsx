@@ -76,21 +76,6 @@ interface SquadApiResponse {
 
 type LoadState = "loading" | "error" | "empty" | "ready";
 
-/* ================================================================== *
- *  MOCK DATA (stand-in for the real API — no hardcoded UI, only data)
- * ================================================================== */
-
-const flag = (seed: string) =>
-  `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(
-    seed
-  )}&backgroundType=gradientLinear`;
-
-const avatar = (seed: string) =>
-  `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(
-    seed
-  )}&backgroundColor=e8f7f1`;
-
-
 
 /* ================================================================== *
  *  ICONS (inline SVG — zero external icon dependency)
