@@ -7,46 +7,32 @@ export default async function handler(
   try {
     const { matchId } = req.query;
 
-    if (!matchId) {
-      return res.status(400).json({
-        error: "matchId is required",
-      });
-    }
-
     const response = await fetch(
-  `https://www.cricbuzz.com/cricket-match-squads/${matchId}`,
-  {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-      "Accept":
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Referer": "https://www.cricbuzz.com/",
-      "Cache-Control": "no-cache",
-      "Pragma": "no-cache",
-      "Upgrade-Insecure-Requests": "1"
-    }
-  }
-);
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: `Cricbuzz returned ${response.status}`,
-      });
-    }
+      `https://www.cricbuzz.com/cricket-match-squads/${matchId}`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/137 Safari/537.36",
+          Accept: "text/html",
+        },
+      }
+    );
 
     const html = await response.text();
 
-    // Raw HTML return karega
-    return res
-      .status(200)
-      .setHeader("Content-Type", "text/html; charset=utf-8")
-      .send(html);
+    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 
-  } catch (error: any) {
+    const nextScripts = scripts
+      .map((s) => s[1])
+      .filter((s) => s.includes("self.__next_f.push"));
+
+    return res.status(200).json({
+      totalScripts: scripts.length,
+      nextScripts,
+    });
+  } catch (e: any) {
     return res.status(500).json({
-      error: error.message,
+      error: e.message,
     });
   }
 }
