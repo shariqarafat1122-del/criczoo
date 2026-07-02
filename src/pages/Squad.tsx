@@ -90,74 +90,7 @@ const avatar = (seed: string) =>
     seed
   )}&backgroundColor=e8f7f1`;
 
-const ENGLAND_W: Player[] = [
-  { profileId: "e1", name: "Amy Jones", role: "WK Batter", captain: false, keeper: true, playingXI: true, image: avatar("Amy Jones") },
-  { profileId: "e2", name: "Tammy Beaumont", role: "Batter", captain: false, keeper: false, playingXI: true, image: avatar("Tammy Beaumont") },
-  { profileId: "e3", name: "Nat Sciver-Brunt", role: "Batting All Rounder", captain: true, keeper: false, playingXI: true, image: avatar("Nat Sciver-Brunt") },
-  { profileId: "e4", name: "Heather Knight", role: "Batter", captain: false, keeper: false, playingXI: true, image: avatar("Heather Knight") },
-  { profileId: "e5", name: "Alice Capsey", role: "Batting All Rounder", captain: false, keeper: false, playingXI: true, image: avatar("Alice Capsey") },
-  { profileId: "e6", name: "Danni Wyatt", role: "Batter", captain: false, keeper: false, playingXI: true, image: avatar("Danni Wyatt") },
-  { profileId: "e7", name: "Sophie Ecclestone", role: "Spinner", captain: false, keeper: false, playingXI: true, image: avatar("Sophie Ecclestone") },
-  { profileId: "e8", name: "Charlie Dean", role: "Bowling All Rounder", captain: false, keeper: false, playingXI: true, image: avatar("Charlie Dean") },
-  { profileId: "e9", name: "Lauren Filer", role: "Fast Bowler", captain: false, keeper: false, playingXI: true, image: avatar("Lauren Filer") },
-  { profileId: "e10", name: "Lauren Bell", role: "Fast Bowler", captain: false, keeper: false, playingXI: true, image: avatar("Lauren Bell") },
-  { profileId: "e11", name: "Mahika Gaur", role: "Spinner", captain: false, keeper: false, playingXI: true, image: avatar("Mahika Gaur") },
-  { profileId: "e12", name: "Bess Heath", role: "WK Batter", captain: false, keeper: true, playingXI: false, image: avatar("Bess Heath") },
-  { profileId: "e13", name: "Issy Wong", role: "Fast Bowler", captain: false, keeper: false, playingXI: false, image: avatar("Issy Wong") },
-  { profileId: "e14", name: "Freya Kemp", role: "Bowling All Rounder", captain: false, keeper: false, playingXI: false, image: avatar("Freya Kemp") },
-  { profileId: "e15", name: "Linsey Smith", role: "Spinner", captain: false, keeper: false, playingXI: false, image: avatar("Linsey Smith") },
-];
 
-const SA_W: Player[] = [
-  { profileId: "s1", name: "Tazmin Brits", role: "Batter", captain: false, keeper: false, playingXI: true, image: avatar("Tazmin Brits") },
-  { profileId: "s2", name: "Laura Wolvaardt", role: "Batter", captain: true, keeper: false, playingXI: true, image: avatar("Laura Wolvaardt") },
-  { profileId: "s3", name: "Anneke Bosch", role: "Batter", captain: false, keeper: false, playingXI: true, image: avatar("Anneke Bosch") },
-  { profileId: "s4", name: "Sune Luus", role: "Batting All Rounder", captain: false, keeper: false, playingXI: true, image: avatar("Sune Luus") },
-  { profileId: "s5", name: "Marizanne Kapp", role: "Bowling All Rounder", captain: false, keeper: false, playingXI: true, image: avatar("Marizanne Kapp") },
-  { profileId: "s6", name: "Sinalo Jafta", role: "WK Batter", captain: false, keeper: true, playingXI: true, image: avatar("Sinalo Jafta") },
-  { profileId: "s7", name: "Annerie Dercksen", role: "Batting All Rounder", captain: false, keeper: false, playingXI: true, image: avatar("Annerie Dercksen") },
-  { profileId: "s8", name: "Nonkululeko Mlaba", role: "Spinner", captain: false, keeper: false, playingXI: true, image: avatar("Nonkululeko Mlaba") },
-  { profileId: "s9", name: "Masabata Klaas", role: "Fast Bowler", captain: false, keeper: false, playingXI: true, image: avatar("Masabata Klaas") },
-  { profileId: "s10", name: "Ayabonga Khaka", role: "Fast Bowler", captain: false, keeper: false, playingXI: true, image: avatar("Ayabonga Khaka") },
-  { profileId: "s11", name: "Nadine de Klerk", role: "Bowling All Rounder", captain: false, keeper: false, playingXI: true, image: avatar("Nadine de Klerk") },
-  { profileId: "s12", name: "Chloe Tryon", role: "Batting All Rounder", captain: false, keeper: false, playingXI: false, image: avatar("Chloe Tryon") },
-  { profileId: "s13", name: "Tumi Sekhukhune", role: "Fast Bowler", captain: false, keeper: false, playingXI: false, image: avatar("Tumi Sekhukhune") },
-  { profileId: "s14", name: "Miché Prinsloo", role: "WK Batter", captain: false, keeper: true, playingXI: false, image: avatar("Miché Prinsloo") },
-];
-
-const MOCK_RESPONSE: SquadApiResponse = {
-  success: true,
-  seriesName: "ICC Women's Championship 2026",
-  venue: "County Ground, Bristol",
-  matchStatus: "Preview",
-  matchDateTime: "Sat, 04 Jul 2026 · 2:00 PM Local",
-  team1Name: "England Women",
-  team2Name: "South Africa Women",
-  team1ShortName: "ENG-W",
-  team2ShortName: "SA-W",
-  team1Flag: flag("England"),
-  team2Flag: flag("South Africa"),
-  team1: ENGLAND_W,
-  team2: SA_W,
-};
-
-/**
- * Fetches squad data for a given match.
- * GET /api/score/squad?matchId=:matchId
- *
- * In production this performs a real network call. Here it's mocked
- * with a simulated latency so the loading / error states are real.
- */
-async function fetchSquad(
-  matchId: string,
-  opts?: { simulateError?: boolean }
-): Promise<SquadApiResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 1100));
-  if (opts?.simulateError) {
-    throw new Error("Network request failed");
-  }
-  return MOCK_RESPONSE;
-}
 
 /* ================================================================== *
  *  ICONS (inline SVG — zero external icon dependency)
