@@ -1,7 +1,7 @@
 
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useRouter } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 /* ═══════════════════════════════════════════════════════════════════
    TYPES
