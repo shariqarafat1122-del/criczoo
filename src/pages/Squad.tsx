@@ -725,7 +725,7 @@ const TeamSection: React.FC<{
 
 export default function SquadPage() {
   const params = useParams();
-  const router = useRouter();
+  const router = useNavigate();
   const matchId = params?.matchId as string | undefined;
 
   const [data, setData] = useState<SquadResponse | null>(null);
