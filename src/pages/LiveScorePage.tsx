@@ -1394,7 +1394,7 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
   const fetchData = useCallback(async () => {
     try {
       setError(null);
-      const res = await fetch("`/api/score/scorecard?matchId=${matchId}`", { cache: "no-store" });
+      const res = await fetch(`/api/score/scorecard?matchId=${matchId}`, { cache: "no-store" });
       if (!res.ok) {
         throw new Error(`API returned ${res.status}: ${res.statusText || "Unknown error"}`);
       }
