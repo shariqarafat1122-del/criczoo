@@ -250,7 +250,7 @@ const cx = (...classes: (string | false | undefined | null)[]) =>
   classes.filter(Boolean).join(" ");
 
 /* ═════════════════════════════════════════════════════════════════════
-   DESIGN TOKENS — premium Cricbuzz-inspired system (responsive)
+   DESIGN TOKENS
    ═════════════════════════════════════════════════════════════════════ */
 
 const card =
@@ -266,7 +266,7 @@ const th =
   "px-2 sm:px-3.5 py-2 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider whitespace-nowrap";
 
 const td =
-  "px-2 sm:px-3.5 py-3 text-xs sm:text-[13px] text-gray-700 dark:text-gray-300 whitespace-nowrap";
+  "px-2 sm:px-3.5 py-2.5 text-xs sm:text-[13px] text-gray-700 dark:text-gray-300 whitespace-nowrap";
 
 const trEven = "bg-white dark:bg-[#111815]";
 const trOdd = "bg-gray-50/70 dark:bg-white/[0.02]";
@@ -280,7 +280,7 @@ const pill =
   "inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold";
 
 /* ═════════════════════════════════════════════════════════════════════
-   ICONS — inline SVG, no external icon library
+   ICONS
    ═════════════════════════════════════════════════════════════════════ */
 
 const Icon = {
@@ -384,18 +384,6 @@ const AccentBar = () => (
   <span className="w-1 h-5 rounded-full bg-gradient-to-b from-[#00b884] to-[#009270] dark:from-[#3ddba4] dark:to-[#12b985] flex-shrink-0" />
 );
 
-const InfoRow = ({ label, value }: { label: string; value?: string | number | null }) => {
-  if (value === undefined || value === null || value === "") return null;
-  return (
-    <div className="flex items-start gap-3 px-3 sm:px-5 py-3 border-b border-gray-50 dark:border-white/[0.04] last:border-0">
-      <span className="text-[10px] sm:text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-24 sm:w-32 flex-shrink-0 pt-0.5">
-        {label}
-      </span>
-      <span className="text-xs sm:text-[13.5px] text-gray-800 dark:text-gray-200 font-semibold flex-1 break-words">{value}</span>
-    </div>
-  );
-};
-
 const Section = ({
   icon,
   title,
@@ -415,7 +403,6 @@ const Section = ({
   </div>
 );
 
-/* Real <table> layout for label/value info blocks (Match Information, Match Summary) */
 const InfoTable = ({
   rows,
 }: {
@@ -424,8 +411,8 @@ const InfoTable = ({
   const filtered = rows.filter((r) => r.value !== undefined && r.value !== null && r.value !== "");
   if (!filtered.length) return null;
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full">
+    <div className="w-full">
+      <table className="w-full table-fixed">
         <tbody>
           {filtered.map((r, i) => (
             <tr
@@ -475,10 +462,10 @@ const ErrorState = ({ msg }: { msg: string }) => (
 );
 
 /* ═════════════════════════════════════════════════════════════════════
-   MATCH HEADER — sticky, premium gradient banner (responsive)
+   MATCH HEADER
    ═════════════════════════════════════════════════════════════════════ */
 
-const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
+const MatchHeaderComponent = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
   const logo1 = imgUrl(mh.team1?.imageId);
   const logo2 = imgUrl(mh.team2?.imageId);
 
@@ -499,25 +486,21 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
 
   return (
     <div className="sticky top-0 z-50 bg-white/85 dark:bg-[#0a0f0d]/85 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.06] shadow-[0_1px_0_rgba(0,0,0,0.02)] w-full">
-      {/* Top strip: series + format */}
       <div className="bg-gradient-to-r from-[#00734f] via-[#009270] to-[#00a67d] px-3 sm:px-4 py-1.5 flex items-center justify-between">
         <span className="text-white/95 text-[11px] font-semibold tracking-wide truncate">
           {mh.seriesName || mh.series?.name || "Cricket Scorecard"}
         </span>
         {mh.matchFormat && (
-          <span className="text-white text-[10.5px] font-bold bg-white/15 px-2.5 py-0.5 rounded-full tracking-wide">
+          <span className="text-white text-[10.5px] font-bold bg-white/15 px-2.5 py-0.5 rounded-full tracking-wide flex-shrink-0">
             {mh.matchFormat}
           </span>
         )}
       </div>
 
-      {/* Teams row */}
       <div className="px-3 sm:px-4 py-4">
         <div className="flex items-center justify-between gap-3">
-          {/* Team 1 */}
           <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
             {logo1 && (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logo1}
                 alt={mh.team1?.shortName || ""}
@@ -533,8 +516,7 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
             </span>
           </div>
 
-          {/* Center divider */}
-          <div className="flex flex-col items-center gap-1.5">
+          <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
             <span className="bg-gradient-to-br from-[#00b884] to-[#009270] text-white text-[11px] font-black px-3 py-1 rounded-full shadow-sm shadow-[#009270]/30">
               VS
             </span>
@@ -545,10 +527,8 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
             )}
           </div>
 
-          {/* Team 2 */}
           <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
             {logo2 && (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logo2}
                 alt={mh.team2?.shortName || ""}
@@ -565,7 +545,6 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
           </div>
         </div>
 
-        {/* Status / Result */}
         {resultText && (
           <div className="mt-3 text-center">
             <span
@@ -578,7 +557,7 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
             >
               <span
                 className={cx(
-                  "h-1.5 w-1.5 rounded-full",
+                  "h-1.5 w-1.5 rounded-full flex-shrink-0",
                   mh.complete ? "bg-[#009270] dark:bg-[#3ddba4]" : "bg-amber-500 animate-pulse"
                 )}
               />
@@ -588,24 +567,22 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
         )}
       </div>
 
-      {/* Meta strip */}
       <div className="border-t border-black/[0.04] dark:border-white/[0.05] px-3 sm:px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50/60 dark:bg-white/[0.02]">
         {mh.venue?.name && (
           <span className="inline-flex items-center gap-1">
-            <Icon.Pin className="h-3 w-3 text-gray-400" />
-            {mh.venue.name}
-            {mh.venue.city ? `, ${mh.venue.city}` : ""}
+            <Icon.Pin className="h-3 w-3 text-gray-400 flex-shrink-0" />
+            <span className="truncate">{mh.venue.name}{mh.venue.city ? `, ${mh.venue.city}` : ""}</span>
           </span>
         )}
         {tossText && (
           <span className="inline-flex items-center gap-1">
-            <Icon.Coin className="h-3 w-3 text-gray-400" />
-            {tossText}
+            <Icon.Coin className="h-3 w-3 text-gray-400 flex-shrink-0" />
+            <span className="truncate">{tossText}</span>
           </span>
         )}
         {mh.playersOfTheMatch?.[0]?.fullName && (
           <span className="inline-flex items-center gap-1 font-semibold text-[#00734f] dark:text-[#3ddba4]">
-            <Icon.Medal className="h-3 w-3" />
+            <Icon.Medal className="h-3 w-3 flex-shrink-0" />
             {mh.playersOfTheMatch[0].fullName}
           </span>
         )}
@@ -662,7 +639,7 @@ const MatchInformation = ({ mh }: { mh: MatchHeader }) => {
 };
 
 /* ═════════════════════════════════════════════════════════════════════
-   BATTING TABLE
+   BATTING TABLE — dismissal below batter name, no horizontal scroll
    ═════════════════════════════════════════════════════════════════════ */
 
 const BattingTable = ({ innings }: { innings: InningsData }) => {
@@ -676,17 +653,18 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
         <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Bat className="h-4 w-4" /></span>
         <span className={titleText}>Batting</span>
       </div>
-      <div className="w-full overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50/80 dark:bg-white/[0.02] sticky top-0">
+
+      {/* ── Desktop table (sm+) ── */}
+      <div className="hidden sm:block w-full">
+        <table className="w-full table-fixed">
+          <thead className="bg-gray-50/80 dark:bg-white/[0.02]">
             <tr>
-              <th className={cx(th, "text-left min-w-[110px]")}>Batter</th>
-              <th className={cx(th, "text-left")}>Dismissal</th>
-              <th className={cx(th, "text-right")}>R</th>
-              <th className={cx(th, "text-right")}>B</th>
-              <th className={cx(th, "text-right")}>4s</th>
-              <th className={cx(th, "text-right")}>6s</th>
-              <th className={cx(th, "text-right")}>SR</th>
+              <th className={cx(th, "text-left w-[45%]")}>Batter</th>
+              <th className={cx(th, "text-right w-[11%]")}>R</th>
+              <th className={cx(th, "text-right w-[11%]")}>B</th>
+              <th className={cx(th, "text-right w-[11%]")}>4s</th>
+              <th className={cx(th, "text-right w-[11%]")}>6s</th>
+              <th className={cx(th, "text-right w-[11%]")}>SR</th>
             </tr>
           </thead>
           <tbody>
@@ -698,44 +676,35 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
               const dnb = b.balls === undefined && b.runs === undefined;
               return (
                 <tr key={b.batId ?? i} className={cx(i % 2 === 0 ? trEven : trOdd, trHover)}>
-                  <td className={cx(td, "font-semibold min-w-[110px]")}>
-                    <div className="flex items-center gap-1.5">
+                  <td className={cx(td, "!whitespace-normal")}>
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span
-                        className={
+                        className={cx(
+                          "font-semibold",
                           notOut
                             ? "text-[#00734f] dark:text-[#3ddba4]"
                             : "text-gray-800 dark:text-gray-200"
-                        }
+                        )}
                       >
                         {b.batName || "—"}
                         {notOut && !dnb && <span className="text-[#00734f] dark:text-[#3ddba4] ml-0.5">*</span>}
                       </span>
                       {b.isCaptain && (
-                        <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>
-                          C
-                        </span>
+                        <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>C</span>
                       )}
                       {b.isKeeper && (
-                        <span className={cx(badge, "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400")}>
-                          WK
-                        </span>
+                        <span className={cx(badge, "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400")}>WK</span>
                       )}
                     </div>
+                    <div className="text-[11px] text-gray-400 dark:text-gray-500 leading-snug mt-0.5 break-words">
+                      {b.outDesc || (dnb ? "Did Not Bat" : "not out")}
+                    </div>
                   </td>
-                  <td className={cx(td, "text-gray-500 dark:text-gray-400 text-[11px] sm:text-xs leading-tight break-words whitespace-normal max-w-[160px]")}>
-                    {b.outDesc || (dnb ? "Did Not Bat" : "not out")}
-                  </td>
-                  <td
-                    className={cx(
-                      td,
-                      "text-right font-extrabold text-sm sm:text-[14.5px] tabular-nums",
-                      notOut && !dnb
-                        ? "text-[#00734f] dark:text-[#3ddba4]"
-                        : (b.runs ?? 0) === 0
-                        ? "text-gray-400 dark:text-gray-600"
-                        : "text-gray-900 dark:text-white"
-                    )}
-                  >
+                  <td className={cx(td, "text-right font-extrabold text-[14.5px] tabular-nums",
+                    notOut && !dnb ? "text-[#00734f] dark:text-[#3ddba4]"
+                    : (b.runs ?? 0) === 0 ? "text-gray-400 dark:text-gray-600"
+                    : "text-gray-900 dark:text-white"
+                  )}>
                     {dnb ? "—" : fmt(b.runs)}
                   </td>
                   <td className={cx(td, "text-right tabular-nums")}>{dnb ? "—" : fmt(b.balls)}</td>
@@ -747,6 +716,74 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* ── Mobile card layout (< sm) ── */}
+      <div className="sm:hidden divide-y divide-gray-50 dark:divide-white/[0.04]">
+        {batsmen.map((b, i) => {
+          const notOut =
+            !b.outDesc ||
+            b.outDesc.toLowerCase() === "not out" ||
+            b.outDesc.toLowerCase() === "batting";
+          const dnb = b.balls === undefined && b.runs === undefined;
+          return (
+            <div
+              key={b.batId ?? i}
+              className={cx(
+                "px-3 py-3",
+                i % 2 === 0 ? trEven : trOdd
+              )}
+            >
+              {/* Row 1: Name + Score */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+                  <span
+                    className={cx(
+                      "text-[13px] font-semibold",
+                      notOut
+                        ? "text-[#00734f] dark:text-[#3ddba4]"
+                        : "text-gray-800 dark:text-gray-200"
+                    )}
+                  >
+                    {b.batName || "—"}
+                    {notOut && !dnb && <span className="ml-0.5">*</span>}
+                  </span>
+                  {b.isCaptain && (
+                    <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>C</span>
+                  )}
+                  {b.isKeeper && (
+                    <span className={cx(badge, "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400")}>WK</span>
+                  )}
+                </div>
+                <span
+                  className={cx(
+                    "text-lg font-black tabular-nums flex-shrink-0",
+                    notOut && !dnb ? "text-[#00734f] dark:text-[#3ddba4]"
+                    : (b.runs ?? 0) === 0 ? "text-gray-400 dark:text-gray-600"
+                    : "text-gray-900 dark:text-white"
+                  )}
+                >
+                  {dnb ? "—" : fmt(b.runs)}
+                </span>
+              </div>
+
+              {/* Row 2: Dismissal */}
+              <div className="text-[11px] text-gray-400 dark:text-gray-500 leading-snug mt-1 break-words">
+                {b.outDesc || (dnb ? "Did Not Bat" : "not out")}
+              </div>
+
+              {/* Row 3: Stats */}
+              {!dnb && (
+                <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+                  <span><span className="font-semibold text-gray-600 dark:text-gray-300">{fmt(b.balls)}</span>b</span>
+                  <span><span className="font-semibold text-gray-600 dark:text-gray-300">{fmt(b.fours)}</span> 4s</span>
+                  <span><span className="font-semibold text-gray-600 dark:text-gray-300">{fmt(b.sixes)}</span> 6s</span>
+                  <span>SR <span className="font-semibold text-gray-600 dark:text-gray-300">{fmtRate(b.strikeRate)}</span></span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -830,7 +867,7 @@ const DidNotBat = ({ dnb }: { dnb: Record<string, { batId?: number; batName?: st
 };
 
 /* ═════════════════════════════════════════════════════════════════════
-   FALL OF WICKETS — timeline (responsive)
+   FALL OF WICKETS
    ═════════════════════════════════════════════════════════════════════ */
 
 const FallOfWickets = ({ wickets }: { wickets: Record<string, WicketData> }) => {
@@ -844,29 +881,27 @@ const FallOfWickets = ({ wickets }: { wickets: Record<string, WicketData> }) => 
         <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Fall className="h-4 w-4" /></span>
         <span className={titleText}>Fall of Wickets</span>
       </div>
-      <div className="w-full overflow-x-auto px-3 sm:px-5 py-4">
-        <div className="flex gap-2 sm:gap-3">
+      <div className="px-3 sm:px-5 py-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
           {list.map((w, i) => (
-            <div key={i} className="flex-shrink-0 w-[78px] sm:w-[92px] flex flex-col items-center">
-              {i !== list.length - 1 && (
-                <span className="absolute top-4 left-1/2 w-full h-[2px] bg-gray-200 dark:bg-white/10 z-0 hidden sm:block" />
+            <div
+              key={i}
+              className="relative flex flex-col items-center rounded-xl bg-white dark:bg-[#171f1b] border border-black/[0.05] dark:border-white/10 shadow-sm px-2 py-2 hover:shadow-md hover:-translate-y-0.5 hover:border-[#009270]/30 dark:hover:border-[#3ddba4]/30 transition-all duration-200"
+            >
+              <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 tracking-wide">
+                WKT {w.wktNbr}
+              </span>
+              <span className="text-sm sm:text-[15px] font-black text-gray-900 dark:text-white mt-0.5 tabular-nums">
+                {fmt(w.wktRuns)}
+              </span>
+              {w.wktOver !== undefined && (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500">({fmtOvers(w.wktOver)})</span>
               )}
-              <div className="relative z-10 flex flex-col items-center rounded-xl bg-white dark:bg-[#171f1b] border border-black/[0.05] dark:border-white/10 shadow-sm px-2.5 py-2 hover:shadow-md hover:-translate-y-0.5 hover:border-[#009270]/30 dark:hover:border-[#3ddba4]/30 transition-all duration-200">
-                <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 tracking-wide">
-                  WKT {w.wktNbr}
+              {w.batName && (
+                <span className="text-[10px] sm:text-[11px] font-semibold text-[#00734f] dark:text-[#3ddba4] mt-1 break-words text-center leading-tight">
+                  {w.batName}
                 </span>
-                <span className="text-sm sm:text-[15px] font-black text-gray-900 dark:text-white mt-0.5 tabular-nums">
-                  {fmt(w.wktRuns)}
-                </span>
-                {w.wktOver !== undefined && (
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">({fmtOvers(w.wktOver)})</span>
-                )}
-                {w.batName && (
-                  <span className="text-[10px] sm:text-[11px] font-semibold text-[#00734f] dark:text-[#3ddba4] mt-1 break-words text-center leading-tight">
-                    {w.batName}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           ))}
         </div>
@@ -899,17 +934,19 @@ const Partnerships = ({ data }: { data: Record<string, PartnershipData> }) => {
               key={i}
               className="rounded-xl border border-black/[0.04] dark:border-white/[0.06] p-3 hover:bg-gray-50/70 dark:hover:bg-white/[0.02] transition-colors duration-150"
             >
-              <div className="flex items-center justify-between mb-1.5 gap-2">
-                <div className="text-xs sm:text-[12.5px] text-gray-700 dark:text-gray-300 flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
-                  <span className="font-semibold break-words">{p.bat1Name || "—"}</span>
-                  <span className="text-gray-400 text-[10px] sm:text-[11px] shrink-0">
-                    {fmt(p.bat1Runs)}({fmt(p.bat1Balls)}b)
-                  </span>
-                  <span className="text-gray-300 dark:text-gray-600 shrink-0">&amp;</span>
-                  <span className="font-semibold break-words">{p.bat2Name || "—"}</span>
-                  <span className="text-gray-400 text-[10px] sm:text-[11px] shrink-0">
-                    {fmt(p.bat2Runs)}({fmt(p.bat2Balls)}b)
-                  </span>
+              <div className="flex items-start justify-between mb-1.5 gap-2">
+                <div className="text-xs sm:text-[12.5px] text-gray-700 dark:text-gray-300 min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                    <span className="font-semibold">{p.bat1Name || "—"}</span>
+                    <span className="text-gray-400 text-[10px] sm:text-[11px]">
+                      {fmt(p.bat1Runs)}({fmt(p.bat1Balls)}b)
+                    </span>
+                    <span className="text-gray-300 dark:text-gray-600">&amp;</span>
+                    <span className="font-semibold">{p.bat2Name || "—"}</span>
+                    <span className="text-gray-400 text-[10px] sm:text-[11px]">
+                      {fmt(p.bat2Runs)}({fmt(p.bat2Balls)}b)
+                    </span>
+                  </div>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <span className="font-black text-gray-900 dark:text-white tabular-nums">{fmt(p.totalRuns)}</span>
@@ -971,7 +1008,7 @@ const Powerplay = ({ data }: { data: Record<string, PowerPlayData> }) => {
 };
 
 /* ═════════════════════════════════════════════════════════════════════
-   BOWLING TABLE
+   BOWLING TABLE — responsive: card on mobile, table on desktop
    ═════════════════════════════════════════════════════════════════════ */
 
 const BowlingTable = ({ innings }: { innings: InningsData }) => {
@@ -987,22 +1024,24 @@ const BowlingTable = ({ innings }: { innings: InningsData }) => {
         <AccentBar />
         <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Ball className="h-4 w-4" /></span>
         <span className={titleText}>Bowling</span>
-        <span className="ml-0.5 text-xs text-gray-400 dark:text-gray-500 font-medium normal-case">
+        <span className="ml-0.5 text-xs text-gray-400 dark:text-gray-500 font-medium normal-case truncate">
           {innings.bowlTeamDetails?.bowlTeamName}
         </span>
       </div>
-      <div className="w-full overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50/80 dark:bg-white/[0.02] sticky top-0">
+
+      {/* ── Desktop table (sm+) ── */}
+      <div className="hidden sm:block w-full">
+        <table className="w-full table-fixed">
+          <thead className="bg-gray-50/80 dark:bg-white/[0.02]">
             <tr>
-              <th className={cx(th, "text-left")}>Bowler</th>
-              <th className={cx(th, "text-right")}>O</th>
-              <th className={cx(th, "text-right")}>M</th>
-              <th className={cx(th, "text-right")}>R</th>
-              <th className={cx(th, "text-right")}>W</th>
-              <th className={cx(th, "text-right")}>Econ</th>
-              <th className={cx(th, "text-right")}>NB</th>
-              <th className={cx(th, "text-right")}>WD</th>
+              <th className={cx(th, "text-left w-[30%]")}>Bowler</th>
+              <th className={cx(th, "text-right w-[10%]")}>O</th>
+              <th className={cx(th, "text-right w-[10%]")}>M</th>
+              <th className={cx(th, "text-right w-[10%]")}>R</th>
+              <th className={cx(th, "text-right w-[10%]")}>W</th>
+              <th className={cx(th, "text-right w-[10%]")}>Econ</th>
+              <th className={cx(th, "text-right w-[10%]")}>NB</th>
+              <th className={cx(th, "text-right w-[10%]")}>WD</th>
             </tr>
           </thead>
           <tbody>
@@ -1012,40 +1051,28 @@ const BowlingTable = ({ innings }: { innings: InningsData }) => {
 
               return (
                 <tr key={b.bowlId ?? i} className={cx(i % 2 === 0 ? trEven : trOdd, trHover)}>
-                  <td className={cx(td, "font-semibold")}>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-gray-800 dark:text-gray-200 break-words">{b.bowlName || "—"}</span>
+                  <td className={cx(td, "font-semibold !whitespace-normal")}>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-gray-800 dark:text-gray-200">{b.bowlName || "—"}</span>
                       {b.isCaptain && (
-                        <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>
-                          C
-                        </span>
+                        <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>C</span>
                       )}
                       {isTopWkt && (
-                        <span className={cx(badge, "bg-[#009270]/10 text-[#00734f] dark:bg-[#3ddba4]/10 dark:text-[#3ddba4]")}>
-                          Best
-                        </span>
+                        <span className={cx(badge, "bg-[#009270]/10 text-[#00734f] dark:bg-[#3ddba4]/10 dark:text-[#3ddba4]")}>Best</span>
                       )}
                     </div>
                   </td>
                   <td className={cx(td, "text-right tabular-nums")}>{fmtOvers(b.overs)}</td>
                   <td className={cx(td, "text-right tabular-nums")}>{fmt(b.maidens)}</td>
                   <td className={cx(td, "text-right tabular-nums")}>{fmt(b.runs)}</td>
-                  <td
-                    className={cx(
-                      td,
-                      "text-right font-extrabold tabular-nums",
-                      isTopWkt ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-900 dark:text-white"
-                    )}
-                  >
+                  <td className={cx(td, "text-right font-extrabold tabular-nums",
+                    isTopWkt ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-900 dark:text-white"
+                  )}>
                     {fmt(b.wickets)}
                   </td>
-                  <td
-                    className={cx(
-                      td,
-                      "text-right font-bold tabular-nums",
-                      isBestEco ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-600 dark:text-gray-300"
-                    )}
-                  >
+                  <td className={cx(td, "text-right font-bold tabular-nums",
+                    isBestEco ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-600 dark:text-gray-300"
+                  )}>
                     {fmtRate(b.economy)}
                   </td>
                   <td className={cx(td, "text-right tabular-nums")}>{fmt(b.no_balls, "0")}</td>
@@ -1056,13 +1083,60 @@ const BowlingTable = ({ innings }: { innings: InningsData }) => {
           </tbody>
         </table>
       </div>
+
+      {/* ── Mobile card layout (< sm) ── */}
+      <div className="sm:hidden divide-y divide-gray-50 dark:divide-white/[0.04]">
+        {bowlers.map((b, i) => {
+          const isBestEco = b.economy !== undefined && b.economy === minEco && minEco < Infinity;
+          const isTopWkt = (b.wickets ?? 0) === maxWkts && maxWkts > 0;
+
+          return (
+            <div
+              key={b.bowlId ?? i}
+              className={cx("px-3 py-3", i % 2 === 0 ? trEven : trOdd)}
+            >
+              {/* Row 1: Name + figures */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+                  <span className="text-[13px] font-semibold text-gray-800 dark:text-gray-200">
+                    {b.bowlName || "—"}
+                  </span>
+                  {b.isCaptain && (
+                    <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>C</span>
+                  )}
+                  {isTopWkt && (
+                    <span className={cx(badge, "bg-[#009270]/10 text-[#00734f] dark:bg-[#3ddba4]/10 dark:text-[#3ddba4]")}>Best</span>
+                  )}
+                </div>
+                <span className={cx(
+                  "text-lg font-black tabular-nums flex-shrink-0",
+                  isTopWkt ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-900 dark:text-white"
+                )}>
+                  {fmt(b.wickets)}-{fmt(b.runs)}
+                </span>
+              </div>
+
+              {/* Row 2: Stats */}
+              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 flex-wrap">
+                <span><span className="font-semibold text-gray-600 dark:text-gray-300">{fmtOvers(b.overs)}</span> ov</span>
+                <span><span className="font-semibold text-gray-600 dark:text-gray-300">{fmt(b.maidens)}</span> m</span>
+                <span>Econ <span className={cx(
+                  "font-semibold",
+                  isBestEco ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-600 dark:text-gray-300"
+                )}>{fmtRate(b.economy)}</span></span>
+                {(b.no_balls ?? 0) > 0 && <span><span className="font-semibold text-gray-600 dark:text-gray-300">{b.no_balls}</span> nb</span>}
+                {(b.wides ?? 0) > 0 && <span><span className="font-semibold text-gray-600 dark:text-gray-300">{b.wides}</span> wd</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
 
 /* ═════════════════════════════════════════════════════════════════════
-   INNINGS CARD — full detail body for one innings (no outer collapse;
-   the tab bar above controls which innings is visible)
+   INNINGS CARD
    ═════════════════════════════════════════════════════════════════════ */
 
 const InningsCard: React.FC<{ innings: InningsData }> = ({ innings }) => {
@@ -1071,37 +1145,32 @@ const InningsCard: React.FC<{ innings: InningsData }> = ({ innings }) => {
 
   return (
     <div className={cx(card, "animate-[fadeUp_0.35s_ease]")}>
-      {/* Score summary header */}
       <div className="px-3 sm:px-5 py-4 bg-gradient-to-r from-[#009270]/[0.06] via-[#009270]/[0.02] to-transparent dark:from-[#3ddba4]/[0.08] dark:via-[#3ddba4]/[0.02] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-1 h-11 rounded-full bg-gradient-to-b from-[#00b884] to-[#009270] dark:from-[#3ddba4] dark:to-[#12b985] flex-shrink-0" />
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-extrabold text-gray-900 dark:text-white text-lg sm:text-xl tracking-tight">
+                <span className="font-extrabold text-gray-900 dark:text-white text-lg sm:text-xl tracking-tight truncate">
                   {batTeam?.batTeamName || "—"}
                 </span>
                 {score?.isDeclared && (
-                  <span className={cx(pill, "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300")}>
-                    Declared
-                  </span>
+                  <span className={cx(pill, "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300")}>Declared</span>
                 )}
                 {score?.isFollowOn && (
-                  <span className={cx(pill, "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300")}>
-                    Follow-on
-                  </span>
+                  <span className={cx(pill, "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300")}>Follow-on</span>
                 )}
               </div>
             </div>
           </div>
           {score && (
-            <div className="text-right">
+            <div className="text-right flex-shrink-0">
               <div className="flex items-baseline gap-1.5 justify-end">
-                <span className="text-3xl font-black text-[#009270] dark:text-[#3ddba4] tabular-nums">
+                <span className="text-2xl sm:text-3xl font-black text-[#009270] dark:text-[#3ddba4] tabular-nums">
                   {fmt(score.runs)}/{fmt(score.wickets)}
                 </span>
                 {score.overs !== undefined && (
-                  <span className="text-sm font-semibold text-gray-400 dark:text-gray-500">
+                  <span className="text-xs sm:text-sm font-semibold text-gray-400 dark:text-gray-500">
                     ({fmtOvers(score.overs)} ov)
                   </span>
                 )}
@@ -1137,7 +1206,7 @@ const InningsCard: React.FC<{ innings: InningsData }> = ({ innings }) => {
 };
 
 /* ═════════════════════════════════════════════════════════════════════
-   INNINGS TABS — "1st Innings · TeamName" / "2nd Innings · TeamName"
+   INNINGS TABS
    ═════════════════════════════════════════════════════════════════════ */
 
 const ORDINALS = ["1st", "2nd", "3rd", "4th"];
@@ -1161,7 +1230,7 @@ const InningsTabs: React.FC<{
               key={inn.inningsId ?? i}
               onClick={() => onChange(i)}
               className={cx(
-                "flex-1 min-w-[130px] relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-3 sm:px-4 py-2.5 transition-all duration-250",
+                "flex-1 min-w-[110px] relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-2 sm:px-4 py-2.5 transition-all duration-250",
                 isActive
                   ? "bg-white dark:bg-[#111815] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.12)] dark:shadow-[0_2px_14px_-2px_rgba(0,0,0,0.5)]"
                   : "hover:bg-white/50 dark:hover:bg-white/[0.03]"
@@ -1169,21 +1238,21 @@ const InningsTabs: React.FC<{
             >
               <span
                 className={cx(
-                  "text-[10px] font-bold uppercase tracking-wider",
+                  "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider",
                   isActive ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-400 dark:text-gray-500"
                 )}
               >
-                {ORDINALS[i] ?? `${i + 1}th`} Innings
+                {ORDINALS[i] ?? `${i + 1}th`} Inn
               </span>
               <span
                 className={cx(
-                  "text-xs sm:text-sm font-extrabold tracking-tight",
+                  "text-[11px] sm:text-sm font-extrabold tracking-tight",
                   isActive ? "text-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400"
                 )}
               >
                 {teamName}
                 {score && (
-                  <span className="font-semibold ml-1.5 tabular-nums text-xs opacity-80">
+                  <span className="font-semibold ml-1 tabular-nums text-[10px] sm:text-xs opacity-80">
                     {fmt(score.runs)}/{fmt(score.wickets)}
                   </span>
                 )}
@@ -1255,19 +1324,13 @@ const PlayingXI = ({ data, mh }: { data: ScorecardResponse["playingxi"]; mh: Mat
                     </span>
                     <span className="text-gray-800 dark:text-gray-200 font-medium break-words">{p.fullName || p.name}</span>
                     {p.isCaptain && (
-                      <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>
-                        C
-                      </span>
+                      <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>C</span>
                     )}
                     {p.isKeeper && (
-                      <span className={cx(badge, "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400")}>
-                        WK
-                      </span>
+                      <span className={cx(badge, "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400")}>WK</span>
                     )}
                     {p.isOverseas && (
-                      <span className={cx(badge, "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400")}>
-                        OS
-                      </span>
+                      <span className={cx(badge, "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400")}>OS</span>
                     )}
                   </li>
                 ))}
@@ -1284,7 +1347,7 @@ const PlayingXI = ({ data, mh }: { data: ScorecardResponse["playingxi"]; mh: Mat
    BENCH
    ═════════════════════════════════════════════════════════════════════ */
 
-const Bench = ({ data, mh }: { data: ScorecardResponse["bench"]; mh: MatchHeader }) => {
+const BenchSection = ({ data, mh }: { data: ScorecardResponse["bench"]; mh: MatchHeader }) => {
   if (!data?.length) return null;
   const hasPlayers = data.some((t) => (t.player?.length ?? 0) > 0);
   if (!hasPlayers) return null;
@@ -1330,7 +1393,7 @@ const MatchNotes = ({ notes }: { notes?: string[] }) => {
     <Section icon={<Icon.Notes className="h-4 w-4" />} title="Match Notes">
       <ul className="divide-y divide-gray-50 dark:divide-white/[0.05]">
         {notes.map((note, i) => (
-          <li key={i} className="px-3 sm:px-5 py-3 text-xs sm:text-[13px] text-gray-700 dark:text-gray-300 leading-relaxed">
+          <li key={i} className="px-3 sm:px-5 py-3 text-xs sm:text-[13px] text-gray-700 dark:text-gray-300 leading-relaxed break-words">
             {note}
           </li>
         ))}
@@ -1340,7 +1403,7 @@ const MatchNotes = ({ notes }: { notes?: string[] }) => {
 };
 
 /* ═════════════════════════════════════════════════════════════════════
-   PAGE TABS — "Scorecard" vs "Info"
+   PAGE TABS
    ═════════════════════════════════════════════════════════════════════ */
 
 type PageTab = "scorecard" | "info";
@@ -1352,7 +1415,7 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
   ];
 
   return (
-    <div className="sticky top-[118px] sm:top-[126px] z-40 -mx-3 sm:mx-0 px-3 sm:px-0 mb-5 pt-1 w-full">
+    <div className="sticky top-[118px] sm:top-[126px] z-40 mb-5 pt-1 w-full">
       <div className="flex gap-1.5 p-1.5 bg-white/85 dark:bg-[#111815]/85 backdrop-blur-xl rounded-2xl border border-black/[0.05] dark:border-white/[0.06] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.08)]">
         {tabs.map((t) => {
           const isActive = active === t.id;
@@ -1416,7 +1479,6 @@ export default function LiveScorePage() {
     else document.documentElement.classList.remove("dark");
   }, [darkMode]);
 
-  /* auto-refresh every 30s while match is live */
   useEffect(() => {
     if (!data) return;
     if (data.isMatchComplete) return;
@@ -1424,7 +1486,6 @@ export default function LiveScorePage() {
     return () => clearInterval(timer);
   }, [data, fetchData]);
 
-  /* default the active tab to the most recent innings (live matches jump to latest) */
   useEffect(() => {
     if (data?.scoreCard?.length) {
       setActiveInnings(data.scoreCard.length - 1);
@@ -1443,7 +1504,6 @@ export default function LiveScorePage() {
         .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
       `}</style>
 
-      {/* Dark mode toggle (floating) */}
       <button
         onClick={() => setDarkMode((d) => !d)}
         className="fixed bottom-5 right-5 z-50 h-11 w-11 rounded-full bg-white dark:bg-[#161d1a] shadow-[0_4px_16px_-4px_rgba(0,0,0,0.2)] border border-black/[0.05] dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 active:scale-95 transition-transform duration-200"
@@ -1470,13 +1530,13 @@ export default function LiveScorePage() {
 
       {mh && (
         <>
-          <MatchHeader mh={mh} status={data?.status} />
+          <MatchHeaderComponent mh={mh} status={data?.status} />
 
           <main className="max-w-4xl mx-auto px-3 sm:px-4 py-5 w-full">
             {error && (
               <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 text-xs sm:text-[13px] text-amber-700 dark:text-amber-400 flex items-center gap-2">
                 <Icon.Alert className="h-4 w-4 shrink-0" />
-                {error} — Showing cached data.
+                <span className="break-words">{error} — Showing cached data.</span>
               </div>
             )}
 
@@ -1487,26 +1547,22 @@ export default function LiveScorePage() {
                 <MatchSummary mh={mh} status={data?.status} />
                 <MatchInformation mh={mh} />
                 {data?.playingxi && <PlayingXI data={data.playingxi} mh={mh} />}
-                {data?.bench && <Bench data={data.bench} mh={mh} />}
+                {data?.bench && <BenchSection data={data.bench} mh={mh} />}
                 {data?.matchNotes && <MatchNotes notes={data.matchNotes} />}
               </>
             )}
 
             {pageTab === "scorecard" && (
               <>
-                {/* Innings tab bar: "1st Innings · TeamName" / "2nd Innings · TeamName" */}
                 <InningsTabs innings={innings} active={activeInnings} onChange={setActiveInnings} />
-
-                {/* Only the selected innings renders below the tabs */}
                 {visibleInnings && (
                   <InningsCard key={visibleInnings.inningsId ?? activeInnings} innings={visibleInnings} />
                 )}
               </>
             )}
 
-            {/* Footer */}
             <div className="bg-white dark:bg-[#111815] rounded-3xl border border-black/[0.04] dark:border-white/[0.06] px-4 sm:px-5 py-4 text-xs sm:text-[11.5px] text-gray-400 dark:text-gray-600 flex flex-wrap items-center justify-between gap-3 w-full">
-              <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-4 flex-wrap min-w-0">
                 {lastUpdated && (
                   <span>
                     Last updated{" "}
@@ -1519,14 +1575,14 @@ export default function LiveScorePage() {
                 )}
                 {!data?.isMatchComplete && (
                   <span className="inline-flex items-center gap-1.5 text-[#009270] dark:text-[#3ddba4] font-semibold">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#009270] dark:bg-[#3ddba4] animate-pulse" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#009270] dark:bg-[#3ddba4] animate-pulse flex-shrink-0" />
                     Live — refreshing every 30s
                   </span>
                 )}
               </div>
               <button
                 onClick={fetchData}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-[#00b884] to-[#009270] text-white rounded-full font-bold hover:brightness-105 active:scale-95 transition-all duration-200"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-[#00b884] to-[#009270] text-white rounded-full font-bold hover:brightness-105 active:scale-95 transition-all duration-200 flex-shrink-0"
               >
                 <Icon.Refresh className="h-3.5 w-3.5" />
                 Refresh
