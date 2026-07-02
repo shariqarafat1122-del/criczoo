@@ -41,12 +41,11 @@ export default async function handler(
           x.includes("teamName")
       );
 
-    return res.status(200).json({
-      success: true,
-      totalScripts: scripts.length,
-      matchedBlocks: blocks.length,
-      blocks,
-    });
+    return res
+  .status(200)
+  .setHeader("Content-Type", "text/plain")
+  .send(nextScripts.join("\n\n"));
+    
   } catch (e: any) {
     return res.status(500).json({
       success: false,
