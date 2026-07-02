@@ -1,5 +1,6 @@
+"use client";
+
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { useParams } from "react-router-dom";
 
 /* ═════════════════════════════════════════════════════════════════════
    TYPES — mirrors the Cricbuzz scorecard API response
@@ -249,23 +250,23 @@ const cx = (...classes: (string | false | undefined | null)[]) =>
   classes.filter(Boolean).join(" ");
 
 /* ═════════════════════════════════════════════════════════════════════
-   DESIGN TOKENS — premium Cricbuzz-inspired system
+   DESIGN TOKENS — premium Cricbuzz-inspired system (responsive)
    ═════════════════════════════════════════════════════════════════════ */
 
 const card =
-  "bg-white dark:bg-[#111815] rounded-3xl shadow-[0_2px_10px_-4px_rgba(15,23,20,0.08)] dark:shadow-[0_2px_20px_-8px_rgba(0,0,0,0.5)] border border-black/[0.04] dark:border-white/[0.06] overflow-hidden mb-5 transition-shadow duration-300 hover:shadow-[0_8px_24px_-8px_rgba(15,23,20,0.12)] dark:hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.6)]";
+  "bg-white dark:bg-[#111815] rounded-3xl shadow-[0_2px_10px_-4px_rgba(15,23,20,0.08)] dark:shadow-[0_2px_20px_-8px_rgba(0,0,0,0.5)] border border-black/[0.04] dark:border-white/[0.06] overflow-hidden mb-5 transition-shadow duration-300 hover:shadow-[0_8px_24px_-8px_rgba(15,23,20,0.12)] dark:hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.6)] w-full";
 
 const sectionTitle =
-  "flex items-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-[#009270]/[0.06] via-[#009270]/[0.02] to-transparent dark:from-[#12b985]/[0.09] dark:via-[#12b985]/[0.03] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]";
+  "flex items-center gap-2.5 px-3 sm:px-5 py-3 bg-gradient-to-r from-[#009270]/[0.06] via-[#009270]/[0.02] to-transparent dark:from-[#12b985]/[0.09] dark:via-[#12b985]/[0.03] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]";
 
 const titleText =
-  "text-[11.5px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-[0.08em]";
+  "text-[11px] sm:text-[11.5px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-[0.08em]";
 
 const th =
-  "px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider whitespace-nowrap";
+  "px-2 sm:px-3.5 py-2 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider whitespace-nowrap";
 
 const td =
-  "px-3.5 py-3 text-[13px] text-gray-700 dark:text-gray-300 whitespace-nowrap";
+  "px-2 sm:px-3.5 py-3 text-xs sm:text-[13px] text-gray-700 dark:text-gray-300 whitespace-nowrap";
 
 const trEven = "bg-white dark:bg-[#111815]";
 const trOdd = "bg-gray-50/70 dark:bg-white/[0.02]";
@@ -386,11 +387,11 @@ const AccentBar = () => (
 const InfoRow = ({ label, value }: { label: string; value?: string | number | null }) => {
   if (value === undefined || value === null || value === "") return null;
   return (
-    <div className="flex items-start gap-3 px-5 py-3 border-b border-gray-50 dark:border-white/[0.04] last:border-0">
-      <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-32 sm:w-36 flex-shrink-0 pt-0.5">
+    <div className="flex items-start gap-3 px-3 sm:px-5 py-3 border-b border-gray-50 dark:border-white/[0.04] last:border-0">
+      <span className="text-[10px] sm:text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-24 sm:w-32 flex-shrink-0 pt-0.5">
         {label}
       </span>
-      <span className="text-[13.5px] text-gray-800 dark:text-gray-200 font-semibold flex-1">{value}</span>
+      <span className="text-xs sm:text-[13.5px] text-gray-800 dark:text-gray-200 font-semibold flex-1 break-words">{value}</span>
     </div>
   );
 };
@@ -423,7 +424,7 @@ const InfoTable = ({
   const filtered = rows.filter((r) => r.value !== undefined && r.value !== null && r.value !== "");
   if (!filtered.length) return null;
   return (
-    <div className="overflow-x-auto">
+    <div className="w-full overflow-x-auto">
       <table className="w-full">
         <tbody>
           {filtered.map((r, i) => (
@@ -435,10 +436,10 @@ const InfoTable = ({
                 "border-b border-gray-50 dark:border-white/[0.04] last:border-0"
               )}
             >
-              <td className="px-5 py-3 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-32 sm:w-40 align-top whitespace-nowrap">
+              <td className="px-3 sm:px-5 py-3 text-[10px] sm:text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-28 sm:w-36 align-top whitespace-nowrap">
                 {r.label}
               </td>
-              <td className="px-5 py-3 text-[13.5px] text-gray-800 dark:text-gray-200 font-semibold">
+              <td className="px-3 sm:px-5 py-3 text-xs sm:text-[13.5px] text-gray-800 dark:text-gray-200 font-semibold break-words">
                 {r.value}
               </td>
             </tr>
@@ -452,7 +453,7 @@ const InfoTable = ({
 const Skeleton = () => (
   <div className="max-w-4xl mx-auto px-3 py-6 space-y-5 animate-pulse">
     {[...Array(4)].map((_, i) => (
-      <div key={i} className="bg-white dark:bg-[#111815] rounded-3xl shadow-sm border border-black/[0.04] dark:border-white/[0.06] p-6">
+      <div key={i} className="bg-white dark:bg-[#111815] rounded-3xl shadow-sm border border-black/[0.04] dark:border-white/[0.06] p-6 w-full">
         <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded-full w-1/3 mb-4" />
         <div className="space-y-2.5">
           {[...Array(3)].map((_, j) => (
@@ -474,7 +475,7 @@ const ErrorState = ({ msg }: { msg: string }) => (
 );
 
 /* ═════════════════════════════════════════════════════════════════════
-   MATCH HEADER — sticky, premium gradient banner
+   MATCH HEADER — sticky, premium gradient banner (responsive)
    ═════════════════════════════════════════════════════════════════════ */
 
 const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
@@ -497,9 +498,9 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
       : mh.status || status || null;
 
   return (
-    <div className="sticky top-0 z-50 bg-white/85 dark:bg-[#0a0f0d]/85 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.06] shadow-[0_1px_0_rgba(0,0,0,0.02)]">
+    <div className="sticky top-0 z-50 bg-white/85 dark:bg-[#0a0f0d]/85 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.06] shadow-[0_1px_0_rgba(0,0,0,0.02)] w-full">
       {/* Top strip: series + format */}
-      <div className="bg-gradient-to-r from-[#00734f] via-[#009270] to-[#00a67d] px-4 py-1.5 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-[#00734f] via-[#009270] to-[#00a67d] px-3 sm:px-4 py-1.5 flex items-center justify-between">
         <span className="text-white/95 text-[11px] font-semibold tracking-wide truncate">
           {mh.seriesName || mh.series?.name || "Cricket Scorecard"}
         </span>
@@ -511,7 +512,7 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
       </div>
 
       {/* Teams row */}
-      <div className="px-4 py-4">
+      <div className="px-3 sm:px-4 py-4">
         <div className="flex items-center justify-between gap-3">
           {/* Team 1 */}
           <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
@@ -520,14 +521,14 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
               <img
                 src={logo1}
                 alt={mh.team1?.shortName || ""}
-                className="w-12 h-12 object-contain rounded-full border border-black/[0.05] dark:border-white/10 bg-white dark:bg-gray-900 p-0.5 shadow-sm"
+                className="w-11 h-11 sm:w-12 sm:h-12 object-contain rounded-full border border-black/[0.05] dark:border-white/10 bg-white dark:bg-gray-900 p-0.5 shadow-sm"
                 onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
               />
             )}
-            <span className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+            <span className="text-[22px] sm:text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               {mh.team1?.shortName || mh.team1?.name || "—"}
             </span>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400 text-center truncate w-full hidden sm:block">
+            <span className="text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400 text-center truncate w-full hidden sm:block">
               {mh.team1?.name}
             </span>
           </div>
@@ -538,7 +539,7 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
               VS
             </span>
             {(mh.matchDescription || mh.matchNumber) && (
-              <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium text-center whitespace-nowrap">
+              <span className="text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 font-medium text-center whitespace-nowrap">
                 {mh.matchDescription}
               </span>
             )}
@@ -551,14 +552,14 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
               <img
                 src={logo2}
                 alt={mh.team2?.shortName || ""}
-                className="w-12 h-12 object-contain rounded-full border border-black/[0.05] dark:border-white/10 bg-white dark:bg-gray-900 p-0.5 shadow-sm"
+                className="w-11 h-11 sm:w-12 sm:h-12 object-contain rounded-full border border-black/[0.05] dark:border-white/10 bg-white dark:bg-gray-900 p-0.5 shadow-sm"
                 onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = "none")}
               />
             )}
-            <span className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+            <span className="text-[22px] sm:text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               {mh.team2?.shortName || mh.team2?.name || "—"}
             </span>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400 text-center truncate w-full hidden sm:block">
+            <span className="text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400 text-center truncate w-full hidden sm:block">
               {mh.team2?.name}
             </span>
           </div>
@@ -569,7 +570,7 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
           <div className="mt-3 text-center">
             <span
               className={cx(
-                "inline-flex items-center gap-1.5 text-[13px] font-bold px-3 py-1 rounded-full",
+                "inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-bold px-3 py-1 rounded-full",
                 mh.complete
                   ? "text-[#00734f] dark:text-[#3ddba4] bg-[#009270]/[0.08] dark:bg-[#3ddba4]/[0.08]"
                   : "text-amber-700 dark:text-amber-400 bg-amber-500/[0.08]"
@@ -588,7 +589,7 @@ const MatchHeader = ({ mh, status }: { mh: MatchHeader; status?: string }) => {
       </div>
 
       {/* Meta strip */}
-      <div className="border-t border-black/[0.04] dark:border-white/[0.05] px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50/60 dark:bg-white/[0.02]">
+      <div className="border-t border-black/[0.04] dark:border-white/[0.05] px-3 sm:px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50/60 dark:bg-white/[0.02]">
         {mh.venue?.name && (
           <span className="inline-flex items-center gap-1">
             <Icon.Pin className="h-3 w-3 text-gray-400" />
@@ -675,11 +676,11 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
         <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Bat className="h-4 w-4" /></span>
         <span className={titleText}>Batting</span>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px]">
-          <thead className="bg-gray-50/80 dark:bg-white/[0.02]">
+      <div className="w-full overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50/80 dark:bg-white/[0.02] sticky top-0">
             <tr>
-              <th className={cx(th, "text-left w-44")}>Batter</th>
+              <th className={cx(th, "text-left min-w-[110px]")}>Batter</th>
               <th className={cx(th, "text-left")}>Dismissal</th>
               <th className={cx(th, "text-right")}>R</th>
               <th className={cx(th, "text-right")}>B</th>
@@ -697,7 +698,7 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
               const dnb = b.balls === undefined && b.runs === undefined;
               return (
                 <tr key={b.batId ?? i} className={cx(i % 2 === 0 ? trEven : trOdd, trHover)}>
-                  <td className={cx(td, "font-semibold")}>
+                  <td className={cx(td, "font-semibold min-w-[110px]")}>
                     <div className="flex items-center gap-1.5">
                       <span
                         className={
@@ -721,13 +722,13 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
                       )}
                     </div>
                   </td>
-                  <td className={cx(td, "text-gray-500 dark:text-gray-400 max-w-xs text-[11.5px] leading-tight normal-case")}>
+                  <td className={cx(td, "text-gray-500 dark:text-gray-400 text-[11px] sm:text-xs leading-tight break-words whitespace-normal max-w-[160px]")}>
                     {b.outDesc || (dnb ? "Did Not Bat" : "not out")}
                   </td>
                   <td
                     className={cx(
                       td,
-                      "text-right font-extrabold text-[14.5px] tabular-nums",
+                      "text-right font-extrabold text-sm sm:text-[14.5px] tabular-nums",
                       notOut && !dnb
                         ? "text-[#00734f] dark:text-[#3ddba4]"
                         : (b.runs ?? 0) === 0
@@ -765,9 +766,9 @@ const Extras = ({ extras }: { extras: ExtrasData }) => {
   ].filter((x) => x.value !== undefined);
 
   return (
-    <div className="px-5 py-3 bg-gray-50/60 dark:bg-white/[0.015] border-t border-black/[0.04] dark:border-white/[0.05]">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <span className="text-[10.5px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-wider">
+    <div className="px-3 sm:px-5 py-3 bg-gray-50/60 dark:bg-white/[0.015] border-t border-black/[0.04] dark:border-white/[0.05]">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="text-[10px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-wider">
           Extras
         </span>
         <span className="font-extrabold text-gray-900 dark:text-white tabular-nums">
@@ -775,7 +776,7 @@ const Extras = ({ extras }: { extras: ExtrasData }) => {
         </span>
         <span className="text-gray-300 dark:text-gray-700">·</span>
         {items.map((it) => (
-          <span key={it.label} className="text-[11.5px] text-gray-500 dark:text-gray-400">
+          <span key={it.label} className="text-xs text-gray-500 dark:text-gray-400">
             <span className="font-semibold text-gray-600 dark:text-gray-300">{it.full}</span> {it.value}
           </span>
         ))}
@@ -789,8 +790,8 @@ const Extras = ({ extras }: { extras: ExtrasData }) => {
    ═════════════════════════════════════════════════════════════════════ */
 
 const ScoreTotal = ({ score }: { score: ScoreDetails }) => (
-  <div className="px-5 py-3.5 border-t border-black/[0.04] dark:border-white/[0.05] flex flex-wrap items-center gap-x-4 gap-y-1 bg-gradient-to-r from-[#009270]/[0.05] to-transparent dark:from-[#3ddba4]/[0.05]">
-    <span className="text-[10.5px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-wider">Total</span>
+  <div className="px-3 sm:px-5 py-3 border-t border-black/[0.04] dark:border-white/[0.05] flex flex-wrap items-center gap-x-3 gap-y-1 bg-gradient-to-r from-[#009270]/[0.05] to-transparent dark:from-[#3ddba4]/[0.05]">
+    <span className="text-[10px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-wider">Total</span>
     <span className="font-black text-gray-900 dark:text-white text-xl tabular-nums">
       {fmt(score.runs)}/{fmt(score.wickets)}
     </span>
@@ -800,9 +801,9 @@ const ScoreTotal = ({ score }: { score: ScoreDetails }) => (
     {score.isFollowOn && (
       <span className={cx(pill, "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300")}>F/O</span>
     )}
-    <span className="text-[13px] text-gray-600 dark:text-gray-400">({fmtOvers(score.overs)} Ov)</span>
+    <span className="text-xs sm:text-[13px] text-gray-600 dark:text-gray-400">({fmtOvers(score.overs)} Ov)</span>
     {score.runRate !== undefined && (
-      <span className="text-[13px] text-gray-500 dark:text-gray-400">
+      <span className="text-xs sm:text-[13px] text-gray-500 dark:text-gray-400">
         RR <span className="font-bold text-gray-700 dark:text-gray-200">{fmtRate(score.runRate)}</span>
       </span>
     )}
@@ -817,11 +818,11 @@ const DidNotBat = ({ dnb }: { dnb: Record<string, { batId?: number; batName?: st
   const players = Object.values(dnb);
   if (!players.length) return null;
   return (
-    <div className="px-5 py-2.5 border-t border-black/[0.04] dark:border-white/[0.05] bg-gray-50/40 dark:bg-white/[0.01]">
-      <span className="text-[10.5px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-2">
+    <div className="px-3 sm:px-5 py-2.5 border-t border-black/[0.04] dark:border-white/[0.05] bg-gray-50/40 dark:bg-white/[0.01]">
+      <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-2">
         Did Not Bat
       </span>
-      <span className="text-[12.5px] text-gray-600 dark:text-gray-300">
+      <span className="text-xs sm:text-[12.5px] text-gray-600 dark:text-gray-300 break-words">
         {players.map((p) => p.batName).filter(Boolean).join(", ")}
       </span>
     </div>
@@ -829,7 +830,7 @@ const DidNotBat = ({ dnb }: { dnb: Record<string, { batId?: number; batName?: st
 };
 
 /* ═════════════════════════════════════════════════════════════════════
-   FALL OF WICKETS — timeline
+   FALL OF WICKETS — timeline (responsive)
    ═════════════════════════════════════════════════════════════════════ */
 
 const FallOfWickets = ({ wickets }: { wickets: Record<string, WicketData> }) => {
@@ -843,25 +844,25 @@ const FallOfWickets = ({ wickets }: { wickets: Record<string, WicketData> }) => 
         <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Fall className="h-4 w-4" /></span>
         <span className={titleText}>Fall of Wickets</span>
       </div>
-      <div className="px-5 py-4 overflow-x-auto">
-        <div className="flex gap-3 min-w-max relative">
+      <div className="w-full overflow-x-auto px-3 sm:px-5 py-4">
+        <div className="flex gap-2 sm:gap-3">
           {list.map((w, i) => (
-            <div key={i} className="relative flex flex-col items-center min-w-[92px]">
+            <div key={i} className="flex-shrink-0 w-[78px] sm:w-[92px] flex flex-col items-center">
               {i !== list.length - 1 && (
-                <span className="absolute top-4 left-1/2 w-full h-[2px] bg-gray-200 dark:bg-white/10 z-0" />
+                <span className="absolute top-4 left-1/2 w-full h-[2px] bg-gray-200 dark:bg-white/10 z-0 hidden sm:block" />
               )}
-              <div className="relative z-10 flex flex-col items-center rounded-xl bg-white dark:bg-[#171f1b] border border-black/[0.05] dark:border-white/10 shadow-sm px-3 py-2.5 hover:shadow-md hover:-translate-y-0.5 hover:border-[#009270]/30 dark:hover:border-[#3ddba4]/30 transition-all duration-200">
-                <span className="text-[9.5px] font-bold text-gray-400 dark:text-gray-500 tracking-wide">
+              <div className="relative z-10 flex flex-col items-center rounded-xl bg-white dark:bg-[#171f1b] border border-black/[0.05] dark:border-white/10 shadow-sm px-2.5 py-2 hover:shadow-md hover:-translate-y-0.5 hover:border-[#009270]/30 dark:hover:border-[#3ddba4]/30 transition-all duration-200">
+                <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 tracking-wide">
                   WKT {w.wktNbr}
                 </span>
-                <span className="text-[15px] font-black text-gray-900 dark:text-white mt-0.5 tabular-nums">
+                <span className="text-sm sm:text-[15px] font-black text-gray-900 dark:text-white mt-0.5 tabular-nums">
                   {fmt(w.wktRuns)}
                 </span>
                 {w.wktOver !== undefined && (
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">({fmtOvers(w.wktOver)} ov)</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">({fmtOvers(w.wktOver)})</span>
                 )}
                 {w.batName && (
-                  <span className="text-[11px] font-semibold text-[#00734f] dark:text-[#3ddba4] mt-1 truncate max-w-[78px]">
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-[#00734f] dark:text-[#3ddba4] mt-1 break-words text-center leading-tight">
                     {w.batName}
                   </span>
                 )}
@@ -890,7 +891,7 @@ const Partnerships = ({ data }: { data: Record<string, PartnershipData> }) => {
         <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Link className="h-4 w-4" /></span>
         <span className={titleText}>Partnerships</span>
       </div>
-      <div className="px-5 py-4 space-y-2.5">
+      <div className="px-3 sm:px-5 py-4 space-y-2.5">
         {list.map((p, i) => {
           const pct = ((p.totalRuns ?? 0) / maxRuns) * 100;
           return (
@@ -899,20 +900,20 @@ const Partnerships = ({ data }: { data: Record<string, PartnershipData> }) => {
               className="rounded-xl border border-black/[0.04] dark:border-white/[0.06] p-3 hover:bg-gray-50/70 dark:hover:bg-white/[0.02] transition-colors duration-150"
             >
               <div className="flex items-center justify-between mb-1.5 gap-2">
-                <div className="text-[12.5px] text-gray-700 dark:text-gray-300 flex items-center gap-1.5 flex-wrap min-w-0">
-                  <span className="font-semibold truncate">{p.bat1Name || "—"}</span>
-                  <span className="text-gray-400 text-[11px] shrink-0">
+                <div className="text-xs sm:text-[12.5px] text-gray-700 dark:text-gray-300 flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
+                  <span className="font-semibold break-words">{p.bat1Name || "—"}</span>
+                  <span className="text-gray-400 text-[10px] sm:text-[11px] shrink-0">
                     {fmt(p.bat1Runs)}({fmt(p.bat1Balls)}b)
                   </span>
                   <span className="text-gray-300 dark:text-gray-600 shrink-0">&amp;</span>
-                  <span className="font-semibold truncate">{p.bat2Name || "—"}</span>
-                  <span className="text-gray-400 text-[11px] shrink-0">
+                  <span className="font-semibold break-words">{p.bat2Name || "—"}</span>
+                  <span className="text-gray-400 text-[10px] sm:text-[11px] shrink-0">
                     {fmt(p.bat2Runs)}({fmt(p.bat2Balls)}b)
                   </span>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <span className="font-black text-gray-900 dark:text-white tabular-nums">{fmt(p.totalRuns)}</span>
-                  <span className="text-[11px] text-gray-400 ml-1">({fmt(p.totalBalls)}b)</span>
+                  <span className="text-[10px] sm:text-[11px] text-gray-400 ml-1">({fmt(p.totalBalls)}b)</span>
                 </div>
               </div>
               <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
@@ -944,13 +945,13 @@ const Powerplay = ({ data }: { data: Record<string, PowerPlayData> }) => {
         <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Bolt className="h-4 w-4" /></span>
         <span className={titleText}>Powerplay</span>
       </div>
-      <div className="px-5 py-4 flex flex-wrap gap-3">
+      <div className="px-3 sm:px-5 py-4 flex flex-wrap gap-3">
         {list.map((pp, i) => (
           <div
             key={i}
-            className="rounded-xl bg-gradient-to-br from-[#009270]/[0.07] to-[#009270]/[0.02] dark:from-[#3ddba4]/[0.08] dark:to-[#3ddba4]/[0.02] border border-[#009270]/15 dark:border-[#3ddba4]/15 px-4 py-3 min-w-[120px]"
+            className="rounded-xl bg-gradient-to-br from-[#009270]/[0.07] to-[#009270]/[0.02] dark:from-[#3ddba4]/[0.08] dark:to-[#3ddba4]/[0.02] border border-[#009270]/15 dark:border-[#3ddba4]/15 px-4 py-3 flex-1 min-w-[110px]"
           >
-            <div className="text-[10.5px] font-bold text-[#00734f] dark:text-[#3ddba4] mb-1 uppercase tracking-wide">
+            <div className="text-[10px] font-bold text-[#00734f] dark:text-[#3ddba4] mb-1 uppercase tracking-wide">
               {pp.ppType || `PP ${i + 1}`}
             </div>
             {pp.ppOversFrom !== undefined && pp.ppOversTo !== undefined && (
@@ -986,15 +987,15 @@ const BowlingTable = ({ innings }: { innings: InningsData }) => {
         <AccentBar />
         <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Ball className="h-4 w-4" /></span>
         <span className={titleText}>Bowling</span>
-        <span className="ml-0.5 text-[11px] text-gray-400 dark:text-gray-500 font-medium normal-case">
+        <span className="ml-0.5 text-xs text-gray-400 dark:text-gray-500 font-medium normal-case">
           {innings.bowlTeamDetails?.bowlTeamName}
         </span>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[600px]">
-          <thead className="bg-gray-50/80 dark:bg-white/[0.02]">
+      <div className="w-full overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50/80 dark:bg-white/[0.02] sticky top-0">
             <tr>
-              <th className={cx(th, "text-left w-40")}>Bowler</th>
+              <th className={cx(th, "text-left")}>Bowler</th>
               <th className={cx(th, "text-right")}>O</th>
               <th className={cx(th, "text-right")}>M</th>
               <th className={cx(th, "text-right")}>R</th>
@@ -1013,7 +1014,7 @@ const BowlingTable = ({ innings }: { innings: InningsData }) => {
                 <tr key={b.bowlId ?? i} className={cx(i % 2 === 0 ? trEven : trOdd, trHover)}>
                   <td className={cx(td, "font-semibold")}>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-gray-800 dark:text-gray-200">{b.bowlName || "—"}</span>
+                      <span className="text-gray-800 dark:text-gray-200 break-words">{b.bowlName || "—"}</span>
                       {b.isCaptain && (
                         <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>
                           C
@@ -1071,7 +1072,7 @@ const InningsCard: React.FC<{ innings: InningsData }> = ({ innings }) => {
   return (
     <div className={cx(card, "animate-[fadeUp_0.35s_ease]")}>
       {/* Score summary header */}
-      <div className="px-5 py-4 bg-gradient-to-r from-[#009270]/[0.06] via-[#009270]/[0.02] to-transparent dark:from-[#3ddba4]/[0.08] dark:via-[#3ddba4]/[0.02] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]">
+      <div className="px-3 sm:px-5 py-4 bg-gradient-to-r from-[#009270]/[0.06] via-[#009270]/[0.02] to-transparent dark:from-[#3ddba4]/[0.08] dark:via-[#3ddba4]/[0.02] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-1 h-11 rounded-full bg-gradient-to-b from-[#00b884] to-[#009270] dark:from-[#3ddba4] dark:to-[#12b985] flex-shrink-0" />
@@ -1106,7 +1107,7 @@ const InningsCard: React.FC<{ innings: InningsData }> = ({ innings }) => {
                 )}
               </div>
               {score.runRate !== undefined && (
-                <div className="text-[11.5px] text-gray-500 dark:text-gray-400 mt-0.5">
+                <div className="text-[11px] sm:text-[11.5px] text-gray-500 dark:text-gray-400 mt-0.5">
                   Run Rate <span className="font-bold text-gray-700 dark:text-gray-200">{fmtRate(score.runRate)}</span>
                 </div>
               )}
@@ -1160,7 +1161,7 @@ const InningsTabs: React.FC<{
               key={inn.inningsId ?? i}
               onClick={() => onChange(i)}
               className={cx(
-                "flex-1 min-w-[150px] relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-4 py-2.5 transition-all duration-250",
+                "flex-1 min-w-[130px] relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-3 sm:px-4 py-2.5 transition-all duration-250",
                 isActive
                   ? "bg-white dark:bg-[#111815] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.12)] dark:shadow-[0_2px_14px_-2px_rgba(0,0,0,0.5)]"
                   : "hover:bg-white/50 dark:hover:bg-white/[0.03]"
@@ -1176,13 +1177,13 @@ const InningsTabs: React.FC<{
               </span>
               <span
                 className={cx(
-                  "text-sm font-extrabold tracking-tight",
+                  "text-xs sm:text-sm font-extrabold tracking-tight",
                   isActive ? "text-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400"
                 )}
               >
                 {teamName}
                 {score && (
-                  <span className="font-semibold ml-1.5 tabular-nums text-[13px] opacity-80">
+                  <span className="font-semibold ml-1.5 tabular-nums text-xs opacity-80">
                     {fmt(score.runs)}/{fmt(score.wickets)}
                   </span>
                 )}
@@ -1242,17 +1243,17 @@ const PlayingXI = ({ data, mh }: { data: ScorecardResponse["playingxi"]; mh: Mat
               ? mh.team2?.name
               : `Team ${ti + 1}`;
           return (
-            <div key={ti} className="p-5">
+            <div key={ti} className="p-3 sm:p-5">
               <div className="text-[11px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-wider mb-3">
                 {teamName}
               </div>
               <ol className="space-y-2">
                 {team.player?.map((p, pi) => (
-                  <li key={p.id ?? pi} className="flex items-center gap-2.5 text-[13.5px]">
-                    <span className="text-[10.5px] text-gray-400 dark:text-gray-600 w-5 text-right flex-shrink-0 font-semibold">
+                  <li key={p.id ?? pi} className="flex items-center gap-2.5 text-xs sm:text-[13.5px]">
+                    <span className="text-[10px] text-gray-400 dark:text-gray-600 w-5 text-right flex-shrink-0 font-semibold">
                       {pi + 1}
                     </span>
-                    <span className="text-gray-800 dark:text-gray-200 font-medium">{p.fullName || p.name}</span>
+                    <span className="text-gray-800 dark:text-gray-200 font-medium break-words">{p.fullName || p.name}</span>
                     {p.isCaptain && (
                       <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>
                         C
@@ -1300,13 +1301,13 @@ const Bench = ({ data, mh }: { data: ScorecardResponse["bench"]; mh: MatchHeader
               ? mh.team2?.name
               : `Team ${ti + 1}`;
           return (
-            <div key={ti} className="p-5">
+            <div key={ti} className="p-3 sm:p-5">
               <div className="text-[11px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-wider mb-3">
                 {teamName}
               </div>
               <ul className="space-y-2">
                 {team.player.map((p, pi) => (
-                  <li key={p.id ?? pi} className="text-[13.5px] text-gray-700 dark:text-gray-300">
+                  <li key={p.id ?? pi} className="text-xs sm:text-[13.5px] text-gray-700 dark:text-gray-300 break-words">
                     {p.fullName || p.name}
                   </li>
                 ))}
@@ -1329,7 +1330,7 @@ const MatchNotes = ({ notes }: { notes?: string[] }) => {
     <Section icon={<Icon.Notes className="h-4 w-4" />} title="Match Notes">
       <ul className="divide-y divide-gray-50 dark:divide-white/[0.05]">
         {notes.map((note, i) => (
-          <li key={i} className="px-5 py-3 text-[13px] text-gray-700 dark:text-gray-300 leading-relaxed">
+          <li key={i} className="px-3 sm:px-5 py-3 text-xs sm:text-[13px] text-gray-700 dark:text-gray-300 leading-relaxed">
             {note}
           </li>
         ))}
@@ -1339,12 +1340,7 @@ const MatchNotes = ({ notes }: { notes?: string[] }) => {
 };
 
 /* ═════════════════════════════════════════════════════════════════════
-   MAIN PAGE COMPONENT
-   ═════════════════════════════════════════════════════════════════════ */
-
-/* ═════════════════════════════════════════════════════════════════════
-   PAGE TABS — "Scorecard" vs "Info" (keeps Match Summary & Match
-   Information out of the scorecard view, in their own tab)
+   PAGE TABS — "Scorecard" vs "Info"
    ═════════════════════════════════════════════════════════════════════ */
 
 type PageTab = "scorecard" | "info";
@@ -1356,7 +1352,7 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
   ];
 
   return (
-    <div className="sticky top-[126px] sm:top-[130px] z-40 -mx-3 sm:mx-0 px-3 sm:px-0 mb-5 pt-1">
+    <div className="sticky top-[118px] sm:top-[126px] z-40 -mx-3 sm:mx-0 px-3 sm:px-0 mb-5 pt-1 w-full">
       <div className="flex gap-1.5 p-1.5 bg-white/85 dark:bg-[#111815]/85 backdrop-blur-xl rounded-2xl border border-black/[0.05] dark:border-white/[0.06] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.08)]">
         {tabs.map((t) => {
           const isActive = active === t.id;
@@ -1365,7 +1361,7 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
               key={t.id}
               onClick={() => onChange(t.id)}
               className={cx(
-                "flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-bold transition-all duration-250",
+                "flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs sm:text-[13px] font-bold transition-all duration-250",
                 isActive
                   ? "bg-gradient-to-r from-[#00b884] to-[#009270] text-white shadow-sm shadow-[#009270]/30"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]"
@@ -1381,7 +1377,11 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
   );
 };
 
- export default function LiveScorePage() {
+/* ═════════════════════════════════════════════════════════════════════
+   MAIN PAGE COMPONENT
+   ═════════════════════════════════════════════════════════════════════ */
+
+export default function LiveScorePage() {
   const [data, setData] = useState<ScorecardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1389,12 +1389,11 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
   const [darkMode, setDarkMode] = useState(false);
   const [activeInnings, setActiveInnings] = useState(0);
   const [pageTab, setPageTab] = useState<PageTab>("scorecard");
-  const { matchId } = useParams<{ matchId: string }>();
 
   const fetchData = useCallback(async () => {
     try {
       setError(null);
-      const res = await fetch(`/api/score/scorecard?matchId=${matchId}`, { cache: "no-store" });
+      const res = await fetch("/api/score/scorecard?matchId=150756", { cache: "no-store" });
       if (!res.ok) {
         throw new Error(`API returned ${res.status}: ${res.statusText || "Unknown error"}`);
       }
@@ -1437,7 +1436,7 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
   const visibleInnings = useMemo(() => innings[activeInnings], [innings, activeInnings]);
 
   return (
-    <div className="min-h-screen bg-[#f2f4f3] dark:bg-[#0a0f0d] transition-colors duration-300 font-sans">
+    <div className="min-h-screen bg-[#f2f4f3] dark:bg-[#0a0f0d] transition-colors duration-300 font-sans overflow-x-hidden">
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(8px);} to { opacity:1; transform:translateY(0);} }
         .no-scrollbar::-webkit-scrollbar { display:none; }
@@ -1473,9 +1472,9 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
         <>
           <MatchHeader mh={mh} status={data?.status} />
 
-          <main className="max-w-4xl mx-auto px-3 sm:px-4 py-5">
+          <main className="max-w-4xl mx-auto px-3 sm:px-4 py-5 w-full">
             {error && (
-              <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 text-[13px] text-amber-700 dark:text-amber-400 flex items-center gap-2">
+              <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 text-xs sm:text-[13px] text-amber-700 dark:text-amber-400 flex items-center gap-2">
                 <Icon.Alert className="h-4 w-4 shrink-0" />
                 {error} — Showing cached data.
               </div>
@@ -1506,7 +1505,7 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
             )}
 
             {/* Footer */}
-            <div className="bg-white dark:bg-[#111815] rounded-3xl border border-black/[0.04] dark:border-white/[0.06] px-5 py-4 text-[11.5px] text-gray-400 dark:text-gray-600 flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-white dark:bg-[#111815] rounded-3xl border border-black/[0.04] dark:border-white/[0.06] px-4 sm:px-5 py-4 text-xs sm:text-[11.5px] text-gray-400 dark:text-gray-600 flex flex-wrap items-center justify-between gap-3 w-full">
               <div className="flex items-center gap-4 flex-wrap">
                 {lastUpdated && (
                   <span>
@@ -1538,4 +1537,4 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
       )}
     </div>
   );
- }
+}
