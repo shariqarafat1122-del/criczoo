@@ -532,7 +532,7 @@ export default function LiveMatch() {
     if (!data) return;
     const state = data.miniscore?.matchScoreDetails?.state;
     if (state === "Complete") return;
-    const timer = setInterval(fetchData, 10_000);
+    const timer = setInterval(fetchData, 30_000);
     return () => clearInterval(timer);
   }, [data, fetchData]);
 
