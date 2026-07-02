@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import HomePage from "./pages/HomePage";
 import LiveScorePage from "./pages/LiveScorePage";
+import LiveMatch from "./pages/LiveMatch";
+
 
 export default function App() {
   return (
@@ -10,8 +12,8 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
 
         <Route
-          path="/live-score/:matchId"
-          element={<LiveScorePage />}
+          path="/live-score/:matchId" element={<LiveScorePage />}
+          path="/live-match/:matchId" element={<LiveMatch />}
         />
 
         <Route path="*" element={<HomePage />} />
