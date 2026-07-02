@@ -41,7 +41,7 @@ export default async function handler(
           x.includes("teamName")
       );
 
-    return res
+  
   .return res
   .status(200)
   .setHeader("Content-Type", "text/plain")
