@@ -42,9 +42,10 @@ export default async function handler(
       );
 
     return res
+  .return res
   .status(200)
   .setHeader("Content-Type", "text/plain")
-  .send(nextScripts.join("\n\n"));
+  .send(blocks.join("\n\n"));
     
   } catch (e: any) {
     return res.status(500).json({
