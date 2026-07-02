@@ -499,7 +499,7 @@ export default function LiveMatch() {
     }
     try {
       setError(null);
-      const res = await fetch("/api/score/livescore?matchId=160326",
+      const res = await fetch(`/api/score/livescore?matchId=${matchId}`,
         { cache: "no-store" }
       );
       if (!res.ok)
