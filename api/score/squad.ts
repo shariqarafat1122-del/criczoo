@@ -1,9 +1,6 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import * as cheerio from "cheerio";
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+export default async function handler(req: any, res: any) {
   try {
     const { matchId } = req.query;
 
@@ -11,28 +8,34 @@ export default async function handler(
       `https://www.cricbuzz.com/cricket-match-squads/${matchId}`,
       {
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/137 Safari/537.36",
-          Accept: "text/html",
+          "User-Agent": "Mozilla/5.0",
         },
       }
     );
 
     const html = await response.text();
 
-    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+    const $ = cheerio.load(html);
 
-    const nextScripts = scripts
-      .map((s) => s[1])
-      .filter((s) => s.includes("self.__next_f.push"));
+    const players: any[] = [];
+
+    $("a[href^='/profiles/']").each((_, el) => {
+      players.push({
+        name: $(el).text().trim(),
+        profile: "https://www.cricbuzz.com" + $(el).attr("href"),
+        image: $(el).find("img").attr("src"),
+      });
+    });
 
     return res.status(200).json({
-      totalScripts: scripts.length,
-      nextScripts,
+      success: true,
+      total: players.length,
+      players,
     });
-  } catch (e: any) {
+  } catch (err: any) {
     return res.status(500).json({
-      error: e.message,
+      success: false,
+      error: err.message,
     });
   }
 }
