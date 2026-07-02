@@ -3,7 +3,7 @@ export default async function handler(req: any, res: any) {
     const { matchId } = req.query;
 
     const response = await fetch(
-      `"https://www.cricbuzz.com/api/mcenter/livescore/${matchId}`,
+      `"https://www.cricbuzz.com/api/mcenter/livescore?matchId=${matchId}`,
       {
         headers: {
           "User-Agent": "Mozilla/5.0",
