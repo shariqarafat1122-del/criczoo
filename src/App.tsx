@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import LiveScorePage from "./pages/LiveScorePage";
 import LiveMatch from "./pages/LiveMatch";
-import LiveTrainPage from ".pages/TrainTracking";
+import LiveTrainPage from "./pages/TrainTracking";
 
 
 export default function App() {
