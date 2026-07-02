@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams } from "react-router-dom";
 
 /* ═════════════════════════════════════════════════════════════════════
    TYPES
