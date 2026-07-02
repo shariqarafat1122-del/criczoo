@@ -1,718 +1,841 @@
-/**
- * SquadPage.tsx
- * ------------------------------------------------------------------
- * Premium, mobile-first Cricket Match Squad screen — Cricbuzz / ESPN
- * Cricinfo inspired. Built as a single self-contained TSX module.
- *
- * Stack: React 19 + TypeScript + Tailwind CSS
- *
- * Component tree (all colocated below, in dependency order):
- *   SquadPage
- *     ├─ SquadHeader
- *     ├─ MatchInfoCard
- *     ├─ TeamTabs
- *     ├─ TeamSection
- *     │    ├─ PlayingXICard
- *     │    │    └─ PlayerRow
- *     │    └─ BenchSection
- *     │         └─ PlayerRow (compact)
- *     ├─ SkeletonLoader
- *     ├─ ErrorState
- *     └─ EmptyState
- *
- * API contract (see fetchSquad):
- *   GET /api/score/squad?matchId=:matchId
- *   -> SquadApiResponse
- * ------------------------------------------------------------------
- */
+"use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
 
-/* ================================================================== *
- *  TYPES
- * ================================================================== */
-
-type PlayerRole =
-  | "WK Batter"
-  | "Batter"
-  | "Batting All Rounder"
-  | "Bowling All Rounder"
-  | "All Rounder"
-  | "Fast Bowler"
-  | "Spinner"
-  | "Bowler";
+/* ═══════════════════════════════════════════════════════════════════
+   TYPES
+   ═══════════════════════════════════════════════════════════════════ */
 
 interface Player {
-  profileId: string;
+  profileId: number | string;
   name: string;
-  role: PlayerRole;
-  captain: boolean;
-  keeper: boolean;
-  playingXI: boolean;
-  image: string;
+  role?: string;
+  captain?: boolean;
+  keeper?: boolean;
+  image?: string;
+  playingXI?: boolean;
 }
 
-interface SquadApiResponse {
+interface SquadResponse {
   success: boolean;
-  seriesName: string;
-  venue: string;
-  matchStatus: string;
-  matchDateTime: string;
   team1Name: string;
   team2Name: string;
-  team1ShortName: string;
-  team2ShortName: string;
   team1Flag: string;
   team2Flag: string;
   team1: Player[];
   team2: Player[];
+  seriesName?: string;
+  venue?: string;
+  matchStatus?: string;
+  matchDate?: string;
+  matchTime?: string;
+  matchFormat?: string;
+  matchDescription?: string;
 }
 
-type LoadState = "loading" | "error" | "empty" | "ready";
+/* ═══════════════════════════════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════════════════════════════ */
 
+const cx = (...c: (string | false | undefined | null)[]) =>
+  c.filter(Boolean).join(" ");
 
-/* ================================================================== *
- *  ICONS (inline SVG — zero external icon dependency)
- * ================================================================== */
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+};
 
-const IconChevronLeft: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <path
-      d="M15 18l-6-6 6-6"
-      stroke="currentColor"
-      strokeWidth={2.25}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+const getRoleLabel = (role?: string) => {
+  if (!role) return "";
+  const r = role.toLowerCase();
+  if (r.includes("wk") && r.includes("bat")) return "WK-Batter";
+  if (r.includes("keeper") && r.includes("bat")) return "WK-Batter";
+  if (r.includes("keeper")) return "Wicket Keeper";
+  if (r.includes("bat") && r.includes("all")) return "Batting All-rounder";
+  if (r.includes("bowl") && r.includes("all")) return "Bowling All-rounder";
+  if (r.includes("all")) return "All-rounder";
+  if (r.includes("fast") || r.includes("pace")) return "Fast Bowler";
+  if (r.includes("spin")) return "Spinner";
+  if (r.includes("bowl")) return "Bowler";
+  if (r.includes("bat")) return "Batter";
+  return role;
+};
 
-const IconShare: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <path
-      d="M12 5v9.5M12 5l3.5 3.5M12 5L8.5 8.5"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M6 12v5.5A1.5 1.5 0 007.5 19h9a1.5 1.5 0 001.5-1.5V12"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+const getRoleIcon = (role?: string) => {
+  if (!role) return "🏏";
+  const r = role.toLowerCase();
+  if (r.includes("keep") || r.includes("wk")) return "🧤";
+  if (r.includes("all")) return "🏏";
+  if (r.includes("spin")) return "🌀";
+  if (r.includes("fast") || r.includes("pace") || r.includes("bowl")) return "⚾";
+  return "🏏";
+};
 
-const IconLocation: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <path
-      d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 1118.5 10c0 5.4-6.5 11-6.5 11z"
-      stroke="currentColor"
-      strokeWidth={1.75}
-      strokeLinejoin="round"
-    />
-    <circle cx="12" cy="10" r="2.25" stroke="currentColor" strokeWidth={1.75} />
-  </svg>
-);
+/* ═══════════════════════════════════════════════════════════════════
+   ICONS (inline SVG)
+   ═══════════════════════════════════════════════════════════════════ */
 
-const IconClock: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth={1.75} />
-    <path
-      d="M12 7.5V12l3 2"
-      stroke="currentColor"
-      strokeWidth={1.75}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+const Icons = {
+  Back: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+  ),
+  Share: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+      <path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98" />
+    </svg>
+  ),
+  Users: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" />
+    </svg>
+  ),
+  Pin: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z" /><circle cx="12" cy="10" r="2.4" />
+    </svg>
+  ),
+  Calendar: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  ),
+  Shield: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+    </svg>
+  ),
+  Alert: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 9v4M12 17h.01M10.3 3.9 2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+    </svg>
+  ),
+  Refresh: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12a9 9 0 0 1 15.3-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.3 6.4L3 16M3 21v-5h5" />
+    </svg>
+  ),
+  Bat: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.5 3.5 20.5 9.5" /><path d="M9 9 3 15a2.5 2.5 0 0 0 3.5 3.5L12 13" />
+      <path d="M12.5 5.5 18.5 11.5 14 16 8 10Z" />
+    </svg>
+  ),
+  Bench: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="6" width="20" height="4" rx="1" /><path d="M4 10v7M20 10v7M8 10v4M16 10v4" />
+    </svg>
+  ),
+};
 
-const IconRefresh: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <path
-      d="M4 12a8 8 0 0114-5.3M20 12a8 8 0 01-14 5.3"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    />
-    <path
-      d="M18 4v4h-4M6 20v-4h4"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+/* ═══════════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+   ═══════════════════════════════════════════════════════════════════ */
 
-/* Cricket-flavoured illustration for the error state (crossed bat + ball) */
-const IllustrationBatBall: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 160 160" fill="none" className={className} aria-hidden="true">
-    <circle cx="80" cy="80" r="76" fill="#EEF3F1" />
-    <circle cx="80" cy="80" r="76" stroke="#DCE6E1" strokeWidth="1.5" />
-    <g transform="rotate(-32 80 80)">
-      <rect x="74" y="30" width="12" height="70" rx="6" fill="#C7CED6" />
-      <rect x="70" y="94" width="20" height="34" rx="8" fill="#8B6A4A" />
-      <rect x="70" y="94" width="20" height="6" rx="3" fill="#6E5237" />
-    </g>
-    <circle cx="102" cy="54" r="15" fill="#CC3B3B" />
-    <path
-      d="M92 47a15 15 0 000 14M112 47a15 15 0 010 14"
-      stroke="#F6D9D9"
-      strokeWidth="1.5"
-    />
-  </svg>
-);
+const T = {
+  card: "bg-white dark:bg-[#111815] rounded-2xl sm:rounded-3xl shadow-[0_1px_8px_-3px_rgba(15,23,20,0.08)] dark:shadow-[0_1px_16px_-6px_rgba(0,0,0,0.45)] border border-black/[0.04] dark:border-white/[0.06] overflow-hidden w-full",
+  sectionBar: "flex items-center gap-2.5 px-4 sm:px-5 py-3 bg-gradient-to-r from-[#009270]/[0.06] via-[#009270]/[0.02] to-transparent dark:from-[#12b985]/[0.09] dark:via-[#12b985]/[0.03] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]",
+  sectionTitle: "text-[11px] sm:text-[11.5px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-[0.08em]",
+  accentBar: "w-1 h-5 rounded-full bg-gradient-to-b from-[#00b884] to-[#009270] dark:from-[#3ddba4] dark:to-[#12b985] flex-shrink-0",
+  badge: "inline-flex items-center justify-center px-2 py-[2px] rounded-md text-[10px] font-bold leading-none",
+};
 
-/* Empty-state illustration (single upright bat) */
-const IllustrationBat: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 140 140" fill="none" className={className} aria-hidden="true">
-    <circle cx="70" cy="70" r="66" fill="#EEF3F1" />
-    <rect x="63" y="20" width="14" height="62" rx="7" fill="#C7CED6" />
-    <rect x="58" y="80" width="24" height="40" rx="9" fill="#8B6A4A" />
-    <rect x="58" y="80" width="24" height="7" rx="3.5" fill="#6E5237" />
-  </svg>
-);
+/* ═══════════════════════════════════════════════════════════════════
+   LAZY IMAGE with intersection observer
+   ═══════════════════════════════════════════════════════════════════ */
 
-/* ================================================================== *
- *  PRIMITIVE UI HELPERS
- * ================================================================== */
-
-const RoleBadges: React.FC<{ player: Player }> = ({ player }) => (
-  <div className="flex shrink-0 items-center gap-1.5">
-    {player.captain && (
-      <span
-        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#009270] px-1.5 text-[10px] font-bold leading-none text-white shadow-sm"
-        title="Captain"
-      >
-        C
-      </span>
-    )}
-    {player.keeper && (
-      <span
-        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-sky-500 px-1.5 text-[10px] font-bold leading-none text-white shadow-sm"
-        title="Wicket Keeper"
-      >
-        WK
-      </span>
-    )}
-    {player.playingXI && (
-      <span
-        className="h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-emerald-100"
-        title="Playing XI"
-      />
-    )}
-  </div>
-);
-
-const LazyAvatar: React.FC<{
-  src: string;
+const LazyImage: React.FC<{
+  src?: string;
   alt: string;
   size: number;
-}> = ({ src, alt, size }) => {
+  fallback: string;
+  className?: string;
+}> = ({ src, alt, size, fallback, className }) => {
   const [loaded, setLoaded] = useState(false);
-  return (
-    <span
-      className="relative shrink-0 overflow-hidden rounded-full border border-black/5 bg-gray-100 shadow-sm"
-      style={{ width: size, height: size }}
-    >
-      {!loaded && (
-        <span className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-200 to-gray-100" />
-      )}
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        onLoad={() => setLoaded(true)}
-        className={`h-full w-full object-cover transition-opacity duration-300 ${
-          loaded ? "opacity-100" : "opacity-0"
-        }`}
-      />
-    </span>
-  );
-};
+  const [error, setError] = useState(false);
+  const [inView, setInView] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-/* ================================================================== *
- *  PLAYER ROW
- * ================================================================== */
+  useEffect(() => {
+    if (!ref.current) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
 
-const PlayerRow: React.FC<{ player: Player; compact?: boolean }> = ({
-  player,
-  compact = false,
-}) => {
-  const size = compact ? 40 : 48;
+  const showFallback = !src || error || !inView;
+
   return (
     <div
-      className={`group flex items-center gap-3 border-b border-gray-100 bg-white px-4 py-3 last:border-b-0 transition-transform duration-[250ms] ease-out hover:z-10 hover:scale-[1.01] hover:shadow-md active:scale-[0.99] ${
-        compact ? "min-h-[60px]" : "min-h-[72px]"
-      }`}
+      ref={ref}
+      className={cx(
+        "relative rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-black/[0.06] dark:border-white/10 shadow-sm",
+        className
+      )}
+      style={{ width: size, height: size }}
     >
-      <LazyAvatar src={player.image} alt={player.name} size={size} />
-
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[15px] font-semibold leading-tight text-gray-900">
-          {player.name}
-        </p>
-        <p className="mt-0.5 truncate text-[13px] font-medium leading-tight text-gray-500">
-          {player.role}
-        </p>
-      </div>
-
-      <RoleBadges player={player} />
-    </div>
-  );
-};
-
-/* ================================================================== *
- *  HEADER
- * ================================================================== */
-
-const SquadHeader: React.FC<{ onBack?: () => void; onShare?: () => void }> = ({
-  onBack,
-  onShare,
-}) => (
-  <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/90 backdrop-blur-md">
-    <div className="mx-auto flex h-14 max-w-md items-center justify-between px-3">
-      <button
-        type="button"
-        onClick={onBack}
-        aria-label="Go back"
-        className="flex h-10 w-10 items-center justify-center rounded-full text-gray-700 transition-colors duration-200 hover:bg-gray-100 active:bg-gray-200"
-      >
-        <IconChevronLeft className="h-5 w-5" />
-      </button>
-
-      <h1 className="text-[17px] font-bold tracking-tight text-gray-900">
-        Squads
-      </h1>
-
-      <button
-        type="button"
-        onClick={onShare}
-        aria-label="Share"
-        className="flex h-10 w-10 items-center justify-center rounded-full text-gray-700 transition-colors duration-200 hover:bg-gray-100 active:bg-gray-200"
-      >
-        <IconShare className="h-[18px] w-[18px]" />
-      </button>
-    </div>
-  </header>
-);
-
-/* ================================================================== *
- *  MATCH INFO CARD
- * ================================================================== */
-
-const MatchInfoCard: React.FC<{
-  data: Pick<
-    SquadApiResponse,
-    | "team1Name"
-    | "team2Name"
-    | "team1ShortName"
-    | "team2ShortName"
-    | "team1Flag"
-    | "team2Flag"
-    | "seriesName"
-    | "venue"
-    | "matchStatus"
-    | "matchDateTime"
-  >;
-}> = ({ data }) => (
-  <div className="mx-4 mt-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-[0_2px_20px_-4px_rgba(15,23,42,0.08)]">
-    <div className="flex items-center justify-between gap-2">
-      <div className="flex flex-1 flex-col items-center gap-2 text-center">
-        <span className="h-12 w-12 overflow-hidden rounded-full border border-gray-100 shadow-sm">
+      {showFallback ? (
+        <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-600 font-bold text-sm select-none">
+          {fallback}
+        </div>
+      ) : (
+        <>
+          {!loaded && (
+            <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-full" />
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={data.team1Flag}
-            alt={data.team1Name}
-            className="h-full w-full object-cover"
+            src={src}
+            alt={alt}
+            className={cx(
+              "w-full h-full object-cover transition-opacity duration-300",
+              loaded ? "opacity-100" : "opacity-0"
+            )}
+            onLoad={() => setLoaded(true)}
+            onError={() => setError(true)}
+            loading="lazy"
           />
-        </span>
-        <span className="text-[13px] font-bold tracking-wide text-gray-900">
-          {data.team1ShortName}
-        </span>
-      </div>
-
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#009270] shadow-[0_4px_12px_-2px_rgba(0,146,112,0.55)]">
-        <span className="text-[11px] font-extrabold tracking-wide text-white">
-          VS
-        </span>
-      </div>
-
-      <div className="flex flex-1 flex-col items-center gap-2 text-center">
-        <span className="h-12 w-12 overflow-hidden rounded-full border border-gray-100 shadow-sm">
-          <img
-            src={data.team2Flag}
-            alt={data.team2Name}
-            className="h-full w-full object-cover"
-          />
-        </span>
-        <span className="text-[13px] font-bold tracking-wide text-gray-900">
-          {data.team2ShortName}
-        </span>
-      </div>
-    </div>
-
-    <div className="mx-auto mt-5 h-px w-full bg-gray-100" />
-
-    <div className="mt-4 flex flex-col items-center gap-1.5 text-center">
-      <p className="text-[13px] font-semibold text-[#009270]">
-        {data.seriesName}
-      </p>
-      <p className="flex items-center gap-1 text-[13px] text-gray-500">
-        <IconLocation className="h-3.5 w-3.5 text-gray-400" />
-        {data.venue}
-      </p>
-      <span className="mt-1 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-600">
-        {data.matchStatus}
-      </span>
-      <p className="mt-1 flex items-center gap-1 text-[12px] text-gray-400">
-        <IconClock className="h-3.5 w-3.5" />
-        {data.matchDateTime}
-      </p>
-    </div>
-  </div>
-);
-
-/* ================================================================== *
- *  TEAM TABS (segmented control)
- * ================================================================== */
-
-const TeamTabs: React.FC<{
-  team1Label: string;
-  team2Label: string;
-  activeIndex: 0 | 1;
-  onChange: (index: 0 | 1) => void;
-}> = ({ team1Label, team2Label, activeIndex, onChange }) => {
-  const tabs = [team1Label, team2Label];
-
-  return (
-    <div className="mx-4 mt-4">
-      <div className="relative flex rounded-2xl bg-gray-100 p-1">
-        <span
-          className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl bg-[#009270] shadow-[0_2px_10px_-2px_rgba(0,146,112,0.6)] transition-transform duration-300 ease-out"
-          style={{
-            transform: `translateX(${activeIndex === 0 ? "2px" : "calc(100% + 6px)"})`,
-          }}
-          aria-hidden="true"
-        />
-        {tabs.map((label, index) => {
-          const selected = index === activeIndex;
-          return (
-            <button
-              key={label}
-              type="button"
-              onClick={() => onChange(index as 0 | 1)}
-              className={`relative z-10 flex-1 rounded-xl py-2.5 text-[13px] font-bold transition-colors duration-300 ${
-                selected ? "text-white" : "text-gray-500 hover:text-gray-700"
-              }`}
-              aria-pressed={selected}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+        </>
+      )}
     </div>
   );
 };
 
-/* ================================================================== *
- *  PLAYING XI CARD + BENCH SECTION
- * ================================================================== */
+/* ═══════════════════════════════════════════════════════════════════
+   SKELETON LOADER
+   ═══════════════════════════════════════════════════════════════════ */
 
-const SectionCard: React.FC<{
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}> = ({ title, subtitle, children }) => (
-  <div className="mx-4 mt-4 overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_2px_16px_-6px_rgba(15,23,42,0.08)]">
-    <div className="flex items-center gap-2.5 px-5 pb-3 pt-5">
-      <span className="h-5 w-1 rounded-full bg-[#009270]" />
-      <div>
-        <h2 className="text-[15px] font-bold tracking-tight text-gray-900">
-          {title}
-        </h2>
-        {subtitle && (
-          <p className="text-[11px] font-medium text-gray-400">{subtitle}</p>
-        )}
-      </div>
-    </div>
-    <div>{children}</div>
-  </div>
+const SkeletonPulse = ({ className }: { className?: string }) => (
+  <div className={cx("bg-gray-200/80 dark:bg-gray-800 rounded-full animate-pulse", className)} />
 );
 
-const PlayingXICard: React.FC<{ players: Player[] }> = ({ players }) => {
-  const xi = players.filter((p) => p.playingXI);
-  return (
-    <SectionCard title="Playing XI" subtitle={`${xi.length} players`}>
-      {xi.map((player) => (
-        <PlayerRow key={player.profileId} player={player} />
-      ))}
-    </SectionCard>
-  );
-};
-
-const BenchSection: React.FC<{ players: Player[] }> = ({ players }) => {
-  const bench = players.filter((p) => !p.playingXI);
-  if (bench.length === 0) return null;
-  return (
-    <SectionCard title="Bench Players" subtitle={`${bench.length} players`}>
-      {bench.map((player) => (
-        <PlayerRow key={player.profileId} player={player} compact />
-      ))}
-    </SectionCard>
-  );
-};
-
-/* ================================================================== *
- *  TEAM SECTION
- * ================================================================== */
-
-const TeamSection: React.FC<{
-  teamName: string;
-  teamFlag: string;
-  players: Player[];
-}> = ({ teamName, teamFlag, players }) => (
-  <section className="pb-2">
-    <div className="mx-4 mt-5 flex items-center gap-3">
-      <span className="h-9 w-9 overflow-hidden rounded-full border border-gray-100 shadow-sm">
-        <img src={teamFlag} alt={teamName} className="h-full w-full object-cover" />
-      </span>
-      <h2 className="text-[16px] font-extrabold tracking-tight text-gray-900">
-        {teamName}
-      </h2>
-    </div>
-
-    <PlayingXICard players={players} />
-    <BenchSection players={players} />
-  </section>
-);
-
-/* ================================================================== *
- *  SKELETON LOADER
- * ================================================================== */
-
-const SkeletonRow: React.FC<{ compact?: boolean }> = ({ compact }) => (
-  <div
-    className={`flex items-center gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 ${
-      compact ? "min-h-[60px]" : "min-h-[72px]"
-    }`}
-  >
-    <span
-      className="shrink-0 animate-pulse rounded-full bg-gray-200"
-      style={{ width: compact ? 40 : 48, height: compact ? 40 : 48 }}
+const PlayerSkeleton = ({ imgSize = 48 }: { imgSize?: number }) => (
+  <div className="flex items-center gap-3.5 px-4 py-3.5">
+    <div
+      className="rounded-full bg-gray-200 dark:bg-gray-800 animate-pulse flex-shrink-0"
+      style={{ width: imgSize, height: imgSize }}
     />
     <div className="flex-1 space-y-2">
-      <span className="block h-3.5 w-2/5 animate-pulse rounded-full bg-gray-200" />
-      <span className="block h-3 w-1/4 animate-pulse rounded-full bg-gray-150 bg-gray-100" />
+      <SkeletonPulse className="h-4 w-3/5" />
+      <SkeletonPulse className="h-3 w-2/5" />
     </div>
-    <span className="h-5 w-8 animate-pulse rounded-full bg-gray-200" />
+    <SkeletonPulse className="h-5 w-8" />
   </div>
 );
 
-const SkeletonLoader: React.FC = () => (
-  <div className="animate-in fade-in duration-300">
+const FullSkeleton = () => (
+  <div className="max-w-lg mx-auto px-3 sm:px-4 py-4 space-y-4 animate-pulse">
     {/* Match card skeleton */}
-    <div className="mx-4 mt-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex flex-1 flex-col items-center gap-2">
-          <span className="h-12 w-12 animate-pulse rounded-full bg-gray-200" />
-          <span className="h-3 w-10 animate-pulse rounded-full bg-gray-200" />
+    <div className={T.card}>
+      <div className="px-5 py-6 flex flex-col items-center gap-3">
+        <div className="flex items-center gap-6">
+          <SkeletonPulse className="h-12 w-12 !rounded-full" />
+          <SkeletonPulse className="h-7 w-7 !rounded-full" />
+          <SkeletonPulse className="h-12 w-12 !rounded-full" />
         </div>
-        <span className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-gray-200" />
-        <div className="flex flex-1 flex-col items-center gap-2">
-          <span className="h-12 w-12 animate-pulse rounded-full bg-gray-200" />
-          <span className="h-3 w-10 animate-pulse rounded-full bg-gray-200" />
-        </div>
-      </div>
-      <div className="mt-5 flex flex-col items-center gap-2">
-        <span className="h-3 w-40 animate-pulse rounded-full bg-gray-200" />
-        <span className="h-3 w-28 animate-pulse rounded-full bg-gray-200" />
-        <span className="h-3 w-20 animate-pulse rounded-full bg-gray-200" />
+        <SkeletonPulse className="h-3 w-48" />
+        <SkeletonPulse className="h-3 w-32" />
       </div>
     </div>
-
-    {/* Tabs skeleton */}
-    <div className="mx-4 mt-4 h-11 animate-pulse rounded-2xl bg-gray-100" />
-
-    {/* Team header skeleton */}
-    <div className="mx-4 mt-5 flex items-center gap-3">
-      <span className="h-9 w-9 animate-pulse rounded-full bg-gray-200" />
-      <span className="h-4 w-32 animate-pulse rounded-full bg-gray-200" />
-    </div>
-
-    {/* Playing XI skeleton */}
-    <div className="mx-4 mt-4 overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-      <div className="flex items-center gap-2.5 px-5 pb-3 pt-5">
-        <span className="h-5 w-1 rounded-full bg-gray-200" />
-        <span className="h-4 w-24 animate-pulse rounded-full bg-gray-200" />
+    {/* Tab skeleton */}
+    <SkeletonPulse className="h-11 w-full !rounded-xl" />
+    {/* Players skeleton */}
+    <div className={T.card}>
+      <div className="px-4 py-3 flex items-center gap-2">
+        <SkeletonPulse className="h-5 w-1 !rounded-full" />
+        <SkeletonPulse className="h-4 w-24" />
       </div>
-      {Array.from({ length: 6 }).map((_, i) => (
-        <SkeletonRow key={i} />
+      <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
+        {[...Array(6)].map((_, i) => (
+          <PlayerSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+    <div className={T.card}>
+      <div className="px-4 py-3 flex items-center gap-2">
+        <SkeletonPulse className="h-5 w-1 !rounded-full" />
+        <SkeletonPulse className="h-4 w-32" />
+      </div>
+      {[...Array(3)].map((_, i) => (
+        <PlayerSkeleton key={i} imgSize={40} />
       ))}
     </div>
   </div>
 );
 
-/* ================================================================== *
- *  ERROR STATE
- * ================================================================== */
+/* ═══════════════════════════════════════════════════════════════════
+   ERROR STATE
+   ═══════════════════════════════════════════════════════════════════ */
 
-const ErrorState: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
-  <div className="flex flex-col items-center px-8 py-20 text-center">
-    <IllustrationBatBall className="h-36 w-36" />
-    <h2 className="mt-6 text-[17px] font-bold text-gray-900">
-      Unable to load Squad
-    </h2>
-    <p className="mt-1.5 max-w-[240px] text-[13px] leading-relaxed text-gray-500">
-      Please check your internet connection.
-    </p>
+const ErrorStateView: React.FC<{ msg: string; onRetry: () => void }> = ({
+  msg,
+  onRetry,
+}) => (
+  <div className="max-w-lg mx-auto px-4 py-20 flex flex-col items-center gap-5">
+    {/* Illustration */}
+    <div className="relative">
+      <div className="h-28 w-28 rounded-full bg-red-50 dark:bg-red-900/15 flex items-center justify-center">
+        <div className="h-20 w-20 rounded-full bg-red-100/80 dark:bg-red-900/25 flex items-center justify-center">
+          <Icons.Alert className="h-10 w-10 text-red-400 dark:text-red-500" />
+        </div>
+      </div>
+      <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white dark:bg-[#111815] border-2 border-red-200 dark:border-red-800 flex items-center justify-center">
+        <Icons.Bat className="h-4 w-4 text-red-400" />
+      </div>
+    </div>
+
+    <div className="text-center space-y-2">
+      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+        Unable to Load Squad
+      </h3>
+      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
+        {msg || "Please check your internet connection and try again."}
+      </p>
+    </div>
+
     <button
-      type="button"
       onClick={onRetry}
-      className="mt-6 flex items-center gap-2 rounded-full bg-[#009270] px-6 py-3 text-[13px] font-bold text-white shadow-[0_6px_16px_-4px_rgba(0,146,112,0.55)] transition-transform duration-200 active:scale-95"
+      className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#00b884] to-[#009270] text-white rounded-full text-sm font-bold hover:brightness-105 active:scale-95 transition-all duration-200 shadow-md shadow-[#009270]/25"
     >
-      <IconRefresh className="h-4 w-4" />
+      <Icons.Refresh className="h-4 w-4" />
       Retry
     </button>
   </div>
 );
 
-/* ================================================================== *
- *  EMPTY STATE
- * ================================================================== */
+/* ═══════════════════════════════════════════════════════════════════
+   EMPTY STATE
+   ═══════════════════════════════════════════════════════════════════ */
 
-const EmptyState: React.FC = () => (
-  <div className="flex flex-col items-center px-8 py-20 text-center">
-    <IllustrationBat className="h-32 w-32" />
-    <h2 className="mt-6 text-[16px] font-bold text-gray-900">
-      No Squad Available
-    </h2>
-    <p className="mt-1.5 max-w-[240px] text-[13px] leading-relaxed text-gray-500">
-      Squad details for this match haven&apos;t been announced yet.
-    </p>
+const EmptyState = () => (
+  <div className="max-w-lg mx-auto px-4 py-20 flex flex-col items-center gap-5">
+    <div className="h-28 w-28 rounded-full bg-gray-100 dark:bg-gray-800/50 flex items-center justify-center">
+      <div className="h-20 w-20 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+        <Icons.Bat className="h-10 w-10 text-gray-300 dark:text-gray-600" />
+      </div>
+    </div>
+    <div className="text-center space-y-1.5">
+      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+        No Squad Available
+      </h3>
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        Squad details will appear here once announced.
+      </p>
+    </div>
   </div>
 );
 
-/* ================================================================== *
- *  ROOT: SquadPage
- * ================================================================== */
+/* ═══════════════════════════════════════════════════════════════════
+   STICKY HEADER
+   ═══════════════════════════════════════════════════════════════════ */
 
-const Squad: React.FC<{ matchId?: string }> = ({
-  matchId = "68421",
-}) => {
-  const [state, setState] = useState<LoadState>("loading");
-  const [data, setData] = useState<SquadApiResponse | null>(null);
-  const [activeTeam, setActiveTeam] = useState<0 | 1>(0);
-  const forceErrorNext = useRef(false);
-
-  const load = useCallback(async () => {
-    setState("loading");
-    try {
-      const response = await fetchSquad(`/api/score/squad?matchId=${matchId}`, {
-        simulateError: forceErrorNext.current,
-      });
-      forceErrorNext.current = false;
-
-      if (!response.success) {
-        setState("error");
-        return;
-      }
-      const hasPlayers =
-        (response.team1?.length ?? 0) > 0 || (response.team2?.length ?? 0) > 0;
-      if (!hasPlayers) {
-        setData(response);
-        setState("empty");
-        return;
-      }
-      setData(response);
-      setState("ready");
-    } catch {
-      setState("error");
-    }
-  }, [matchId]);
+const StickyHeader: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    load();
-  }, [load]);
-
-  const activeTeamData = useMemo(() => {
-    if (!data) return null;
-    return activeTeam === 0
-      ? { name: data.team1Name, flag: data.team1Flag, players: data.team1 }
-      : { name: data.team2Name, flag: data.team2Flag, players: data.team2 };
-  }, [data, activeTeam]);
-
-  const handleShare = useCallback(() => {
-    if (navigator.share && data) {
-      navigator
-        .share({
-          title: "Squads",
-          text: `${data.team1ShortName} vs ${data.team2ShortName} — ${data.seriesName}`,
-        })
-        .catch(() => {});
-    }
-  }, [data]);
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <div className="min-h-screen w-full bg-[#F5F7FA] font-sans antialiased">
-      <div className="mx-auto w-full max-w-md">
-        <SquadHeader onBack={() => {}} onShare={handleShare} />
+    <header
+      className={cx(
+        "sticky top-0 z-50 w-full transition-all duration-300",
+        scrolled
+          ? "bg-white/90 dark:bg-[#0a0f0d]/90 backdrop-blur-xl shadow-[0_1px_0_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_rgba(255,255,255,0.04)]"
+          : "bg-white dark:bg-[#0a0f0d]"
+      )}
+    >
+      <div className="max-w-lg mx-auto flex items-center justify-between px-2 sm:px-3 h-14">
+        <button
+          onClick={onBack}
+          className="h-10 w-10 rounded-xl flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.06] active:scale-95 transition-all duration-200"
+          aria-label="Go back"
+        >
+          <Icons.Back className="h-5 w-5" />
+        </button>
 
-        {state === "loading" && <SkeletonLoader />}
+        <h1 className="text-[15px] font-bold text-gray-900 dark:text-white tracking-tight">
+          Squads
+        </h1>
 
-        {state === "error" && <ErrorState onRetry={load} />}
+        <button
+          className="h-10 w-10 rounded-xl flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.06] active:scale-95 transition-all duration-200"
+          aria-label="Share"
+        >
+          <Icons.Share className="h-5 w-5" />
+        </button>
+      </div>
+      <div className="h-px bg-gradient-to-r from-transparent via-black/[0.06] dark:via-white/[0.06] to-transparent" />
+    </header>
+  );
+};
 
-        {state === "empty" && <EmptyState />}
+/* ═══════════════════════════════════════════════════════════════════
+   MATCH INFO CARD
+   ═══════════════════════════════════════════════════════════════════ */
 
-        {state === "ready" && data && activeTeamData && (
-          <>
-            <MatchInfoCard
-              data={{
-                team1Name: data.team1Name,
-                team2Name: data.team2Name,
-                team1ShortName: data.team1ShortName,
-                team2ShortName: data.team2ShortName,
-                team1Flag: data.team1Flag,
-                team2Flag: data.team2Flag,
-                seriesName: data.seriesName,
-                venue: data.venue,
-                matchStatus: data.matchStatus,
-                matchDateTime: data.matchDateTime,
-              }}
-            />
+const MatchInfoCard: React.FC<{
+  data: SquadResponse;
+}> = ({ data }) => (
+  <div className={T.card}>
+    {/* Teams */}
+    <div className="px-4 sm:px-5 pt-5 pb-4">
+      <div className="flex items-center justify-center gap-4 sm:gap-6">
+        {/* Team 1 */}
+        <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+          <LazyImage
+            src={data.team1Flag}
+            alt={data.team1Name}
+            size={52}
+            fallback={getInitials(data.team1Name)}
+            className="!border-2"
+          />
+          <span className="text-sm sm:text-[15px] font-extrabold text-gray-900 dark:text-white text-center leading-tight">
+            {data.team1Name}
+          </span>
+        </div>
 
-            <TeamTabs
-              team1Label={data.team1Name}
-              team2Label={data.team2Name}
-              activeIndex={activeTeam}
-              onChange={setActiveTeam}
-            />
+        {/* VS */}
+        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+          <span className="h-9 w-9 rounded-full bg-gradient-to-br from-[#00b884] to-[#009270] flex items-center justify-center text-white text-[11px] font-black shadow-md shadow-[#009270]/25">
+            VS
+          </span>
+        </div>
 
-            <TeamSection
-              teamName={activeTeamData.name}
-              teamFlag={activeTeamData.flag}
-              players={activeTeamData.players}
-            />
+        {/* Team 2 */}
+        <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+          <LazyImage
+            src={data.team2Flag}
+            alt={data.team2Name}
+            size={52}
+            fallback={getInitials(data.team2Name)}
+            className="!border-2"
+          />
+          <span className="text-sm sm:text-[15px] font-extrabold text-gray-900 dark:text-white text-center leading-tight">
+            {data.team2Name}
+          </span>
+        </div>
+      </div>
+    </div>
 
-            {/* Bottom safe area for Android gesture nav */}
-            <div className="h-8" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
-          </>
+    {/* Meta info */}
+    <div className="border-t border-black/[0.04] dark:border-white/[0.05] bg-gray-50/50 dark:bg-white/[0.015] px-4 sm:px-5 py-3 space-y-1.5">
+      {data.seriesName && (
+        <div className="flex items-center gap-2 justify-center">
+          <Icons.Shield className="h-3 w-3 text-[#009270] dark:text-[#3ddba4] flex-shrink-0" />
+          <span className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 font-semibold text-center truncate">
+            {data.seriesName}
+          </span>
+        </div>
+      )}
+      {data.venue && (
+        <div className="flex items-center gap-2 justify-center">
+          <Icons.Pin className="h-3 w-3 text-gray-400 flex-shrink-0" />
+          <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-500 text-center truncate">
+            {data.venue}
+          </span>
+        </div>
+      )}
+      <div className="flex items-center justify-center gap-3 flex-wrap">
+        {data.matchDate && (
+          <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500">
+            <Icons.Calendar className="h-3 w-3" />
+            {data.matchDate}
+            {data.matchTime ? ` · ${data.matchTime}` : ""}
+          </span>
+        )}
+        {data.matchFormat && (
+          <span className="text-[10px] font-bold text-white bg-gradient-to-r from-[#00b884] to-[#009270] px-2 py-0.5 rounded-full">
+            {data.matchFormat}
+          </span>
+        )}
+      </div>
+      {data.matchStatus && (
+        <div className="flex justify-center pt-0.5">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#00734f] dark:text-[#3ddba4] bg-[#009270]/[0.08] dark:bg-[#3ddba4]/[0.08] px-2.5 py-1 rounded-full">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#009270] dark:bg-[#3ddba4]" />
+            {data.matchStatus}
+          </span>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+/* ═══════════════════════════════════════════════════════════════════
+   TEAM TABS (Segmented Control)
+   ═══════════════════════════════════════════════════════════════════ */
+
+const TeamTabs: React.FC<{
+  team1Name: string;
+  team2Name: string;
+  active: 0 | 1;
+  onChange: (tab: 0 | 1) => void;
+}> = ({ team1Name, team2Name, active, onChange }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative flex p-1 bg-gray-200/70 dark:bg-white/[0.06] rounded-xl overflow-hidden"
+    >
+      {/* Animated slider */}
+      <div
+        className="absolute top-1 bottom-1 rounded-[10px] bg-gradient-to-r from-[#00b884] to-[#009270] shadow-md shadow-[#009270]/20 transition-all duration-350 ease-[cubic-bezier(0.4,0,0.2,1)] z-0"
+        style={{
+          width: "calc(50% - 4px)",
+          left: active === 0 ? 4 : "calc(50% + 0px)",
+        }}
+      />
+      {[team1Name, team2Name].map((name, i) => (
+        <button
+          key={i}
+          onClick={() => onChange(i as 0 | 1)}
+          className={cx(
+            "relative z-10 flex-1 py-2.5 text-[12px] sm:text-[13px] font-bold rounded-[10px] transition-colors duration-300 truncate px-2",
+            active === i
+              ? "text-white"
+              : "text-gray-600 dark:text-gray-400"
+          )}
+        >
+          {name}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   PLAYER CARD
+   ═══════════════════════════════════════════════════════════════════ */
+
+const PlayerCard: React.FC<{
+  player: Player;
+  index: number;
+  compact?: boolean;
+}> = ({ player, index, compact = false }) => {
+  const imgSize = compact ? 40 : 48;
+  const roleLabel = getRoleLabel(player.role);
+  const roleIcon = getRoleIcon(player.role);
+
+  return (
+    <div
+      className={cx(
+        "flex items-center gap-3 sm:gap-3.5 px-4 py-3 transition-all duration-250 hover:bg-[#009270]/[0.03] dark:hover:bg-[#3ddba4]/[0.04] active:scale-[0.995] cursor-default group",
+        index > 0 && "border-t border-gray-50 dark:border-white/[0.04]"
+      )}
+      style={{
+        animationDelay: `${index * 40}ms`,
+        animation: "fadeSlideUp 0.4s ease both",
+      }}
+    >
+      {/* Image */}
+      <div className="relative flex-shrink-0">
+        <LazyImage
+          src={player.image}
+          alt={player.name}
+          size={imgSize}
+          fallback={getInitials(player.name)}
+        />
+        {/* Playing XI dot */}
+        {player.playingXI !== false && !compact && (
+          <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-white dark:bg-[#111815] flex items-center justify-center shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-[#009270] dark:bg-[#3ddba4]" />
+          </span>
+        )}
+      </div>
+
+      {/* Name & Role */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span
+            className={cx(
+              "font-semibold text-gray-900 dark:text-white truncate",
+              compact ? "text-[13px]" : "text-[14px] sm:text-[15px]"
+            )}
+          >
+            {player.name}
+          </span>
+        </div>
+        {roleLabel && (
+          <div className="flex items-center gap-1 mt-0.5">
+            <span className="text-[11px] leading-none">{roleIcon}</span>
+            <span
+              className={cx(
+                "text-gray-500 dark:text-gray-400 truncate",
+                compact ? "text-[11px]" : "text-[12px] sm:text-[13px]"
+              )}
+            >
+              {roleLabel}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Badges */}
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {player.captain && (
+          <span
+            className={cx(
+              T.badge,
+              "bg-[#009270]/10 text-[#00734f] dark:bg-[#3ddba4]/15 dark:text-[#3ddba4] border border-[#009270]/20 dark:border-[#3ddba4]/20"
+            )}
+          >
+            C
+          </span>
+        )}
+        {player.keeper && (
+          <span
+            className={cx(
+              T.badge,
+              "bg-blue-50 text-blue-600 dark:bg-blue-900/25 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40"
+            )}
+          >
+            WK
+          </span>
         )}
       </div>
     </div>
   );
 };
 
-export default Squad;
+/* ═══════════════════════════════════════════════════════════════════
+   PLAYER LIST SECTION
+   ═══════════════════════════════════════════════════════════════════ */
+
+const PlayerSection: React.FC<{
+  title: string;
+  icon: React.ReactNode;
+  players: Player[];
+  compact?: boolean;
+  count?: number;
+}> = ({ title, icon, players, compact = false, count }) => {
+  if (!players.length) return null;
+
+  return (
+    <div className={T.card}>
+      <div className={T.sectionBar}>
+        <span className={T.accentBar} />
+        <span className="text-[#009270] dark:text-[#3ddba4]">{icon}</span>
+        <span className={T.sectionTitle}>{title}</span>
+        {count !== undefined && (
+          <span className="ml-auto text-[10px] font-bold text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded-full tabular-nums">
+            {count}
+          </span>
+        )}
+      </div>
+      <div>
+        {players.map((player, i) => (
+          <PlayerCard
+            key={player.profileId}
+            player={player}
+            index={i}
+            compact={compact}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   TEAM SECTION (Playing XI + Bench)
+   ═══════════════════════════════════════════════════════════════════ */
+
+const TeamSection: React.FC<{
+  players: Player[];
+  teamName: string;
+  teamFlag: string;
+}> = ({ players, teamName, teamFlag }) => {
+  // Separate playing XI and bench
+  const playingXI = players.filter((p) => p.playingXI !== false);
+  const bench = players.filter((p) => p.playingXI === false);
+
+  // If no playingXI flag exists, treat first 11 as XI and rest as bench
+  const hasPlayingXIFlag = players.some((p) => p.playingXI === true);
+  const finalXI = hasPlayingXIFlag
+    ? playingXI
+    : players.slice(0, 11);
+  const finalBench = hasPlayingXIFlag
+    ? bench
+    : players.slice(11);
+
+  if (!players.length) return <EmptyState />;
+
+  return (
+    <div className="space-y-4 animate-[fadeSlideUp_0.35s_ease]">
+      {/* Team header */}
+      <div className="flex items-center gap-3 px-1">
+        <LazyImage
+          src={teamFlag}
+          alt={teamName}
+          size={32}
+          fallback={getInitials(teamName)}
+        />
+        <div>
+          <div className="text-[15px] font-extrabold text-gray-900 dark:text-white tracking-tight">
+            {teamName}
+          </div>
+          <div className="text-[11px] text-gray-500 dark:text-gray-400">
+            {players.length} Players
+          </div>
+        </div>
+      </div>
+
+      {/* Playing XI */}
+      <PlayerSection
+        title="Playing XI"
+        icon={<Icons.Users className="h-4 w-4" />}
+        players={finalXI}
+        count={finalXI.length}
+      />
+
+      {/* Bench */}
+      {finalBench.length > 0 && (
+        <PlayerSection
+          title="Bench Players"
+          icon={<Icons.Bench className="h-4 w-4" />}
+          players={finalBench}
+          compact
+          count={finalBench.length}
+        />
+      )}
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN PAGE
+   ═══════════════════════════════════════════════════════════════════ */
+
+export default function SquadPage() {
+  const params = useParams();
+  const router = useRouter();
+  const matchId = params?.matchId as string | undefined;
+
+  const [data, setData] = useState<SquadResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<0 | 1>(0);
+
+  const fetchData = useCallback(async () => {
+    if (!matchId) {
+      setError("No match ID provided");
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch(`/api/score/squad?matchId=${matchId}`, {
+        cache: "no-store",
+      });
+      if (!res.ok)
+        throw new Error(`API returned ${res.status}: ${res.statusText || "Unknown error"}`);
+      const json: SquadResponse = await res.json();
+      if (!json.success) throw new Error("Failed to load squad data");
+      setData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch squad");
+    } finally {
+      setLoading(false);
+    }
+  }, [matchId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  }, [router]);
+
+  const handleTabChange = useCallback((tab: 0 | 1) => {
+    setActiveTab(tab);
+  }, []);
+
+  const currentPlayers =
+    activeTab === 0 ? data?.team1 ?? [] : data?.team2 ?? [];
+  const currentTeamName =
+    activeTab === 0 ? data?.team1Name ?? "" : data?.team2Name ?? "";
+  const currentTeamFlag =
+    activeTab === 0 ? data?.team1Flag ?? "" : data?.team2Flag ?? "";
+
+  return (
+    <div className="min-h-screen bg-[#F5F7FA] dark:bg-[#0a0f0d] transition-colors duration-300 font-sans overflow-x-hidden">
+      <style>{`
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+
+      {/* Header */}
+      <StickyHeader onBack={handleBack} />
+
+      {/* Loading */}
+      {loading && !data && <FullSkeleton />}
+
+      {/* Error */}
+      {error && !data && !loading && (
+        <ErrorStateView msg={error} onRetry={fetchData} />
+      )}
+
+      {/* Content */}
+      {data && (
+        <main className="max-w-lg mx-auto px-3 sm:px-4 py-4 pb-10 space-y-4">
+          {/* Stale data warning */}
+          {error && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
+              <Icons.Alert className="h-4 w-4 shrink-0" />
+              <span className="break-words flex-1">{error} — Showing cached data.</span>
+            </div>
+          )}
+
+          {/* Match Info */}
+          <MatchInfoCard data={data} />
+
+          {/* Team Tabs */}
+          <TeamTabs
+            team1Name={data.team1Name}
+            team2Name={data.team2Name}
+            active={activeTab}
+            onChange={handleTabChange}
+          />
+
+          {/* Team Section */}
+          <TeamSection
+            key={activeTab}
+            players={currentPlayers}
+            teamName={currentTeamName}
+            teamFlag={currentTeamFlag}
+          />
+
+          {/* Bottom safe area */}
+          <div className="h-6" />
+        </main>
+      )}
+    </div>
+  );
+}
