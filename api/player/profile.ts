@@ -95,7 +95,9 @@ const worksFor: string | null = person.worksFor || grabFromPerson("worksFor");
 // role / battingStyle / bowlingStyle are NOT in JSON-LD — only in the
 // plain-text "PERSONAL INFORMATION" block, so grab() (JSON key:value) never finds them.
 // Parse that text block directly instead:
-
+    
+const roleMatch = html.match(/Role[\s\S]{0,80}?WK-Batsman|Batsman|Bowler|All-Rounder/i);
+const role = roleMatch ? roleMatch[1].trim() : null;
 const nameMatch = html.match(/<span[^>]*class="[^"]*text-xl[^"]*"[^>]*>([^<]+)<\/span>/i);
 const name = nameMatch?.[1]?.trim() || person.name || grabFromPerson("name") || null;
 
