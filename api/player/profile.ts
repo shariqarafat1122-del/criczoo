@@ -8,15 +8,10 @@ interface BattingFormEntry {
   date: string;
 }
 
-interface RankingEntry {
-  current: string;
-  best: string;
-}
-
 interface Rankings {
   test: string;
   odi: string;
-  t20i: string | RankingEntry;
+  t20i: string | { current: string; best: string };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -31,24 +26,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const response = await fetch(url, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept":
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.cricbuzz.com/",
       },
     });
+
+    const html = await response.text();
 
     if (!response.ok) {
       return res.status(response.status).json({
         success: false,
         error: `Upstream returned ${response.status}`,
+        preview: html.slice(0, 300), // debug: see what Cricbuzz actually sent
       });
     }
 
-    const html = await response.text();
+    // Only treat as not-found if the explicit Next.js not-found flag is present
+    // AND there's no valid player name in a script tag (avoids false positives
+    // from "Nothing to show" appearing in unrelated widgets on the same page).
+    const hasNotFoundFlag = html.includes('"asNotFound":true');
+    const hasPersonSchema = html.includes('"@type":"Person"');
 
-    if (html.includes("Nothing to show") || html.includes('"asNotFound":true')) {
+    if (hasNotFoundFlag && !hasPersonSchema) {
       return res.status(404).json({
         success: false,
         profileId,
         error: "Player profile not found",
+        preview: html.slice(0, 300), // debug: remove once confirmed working
       });
     }
 
