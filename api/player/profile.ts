@@ -1,49 +1,51 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import * as cheerio from "cheerio";
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
   try {
-    const { profileUrl } = req.query;
+    const { profileId } = req.query;
 
-    if (!profileUrl) {
+    if (!profileId) {
       return res.status(400).json({
         success: false,
-        message: "profileUrl is required",
+        message: "profileId is required",
       });
     }
 
-    const response = await fetch(profileUrl as string, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/137 Safari/537.36",
-        Accept: "text/html",
-      },
-    });
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        success: false,
-        message: "Failed to fetch player page",
-      });
-    }
+    const response = await fetch(
+      `https://www.cricbuzz.com/profiles/${profileId}`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138 Safari/537.36",
+          Accept: "text/html",
+        },
+      }
+    );
 
     const html = await response.text();
 
-    const $ = cheerio.load(html);
+    return res.status(200).json({
+      success: true,
+      length: html.length,
 
-    // Ab yahan parsing hogi
-    // const name = ...
-    // const image = ...
-    // const role = ...
+      hasName: html.includes("Tim Seifert"),
+      hasBorn: html.includes("Born"),
+      hasBatting: html.includes("Batting Style"),
+      hasBirthPlace: html.includes("Birth Place"),
+      hasBattingSummary: html.includes("Batting Career Summary"),
+      hasBowlingSummary: html.includes("Bowling Career Summary"),
+      
+      
 
-    return res.status(200).send(html); // Test ke liye
-  } catch (e: any) {
+      html,
+    });
+  } catch (err: any) {
     return res.status(500).json({
       success: false,
-      error: e.message,
+      error: err.message,
     });
   }
 }
