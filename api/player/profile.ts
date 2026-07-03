@@ -41,6 +41,7 @@ export default async function handler(
       hasBowling: decoded.includes("Bowling Style"),
       hasTeams: decoded.includes("Teams"),
       hasName: decoded.includes("Tim Seifert"),
+      hasBattingSummary: decoded.includes("Batting Career Summary"),
       length: decoded.length,
     });
   } catch (err: any) {
