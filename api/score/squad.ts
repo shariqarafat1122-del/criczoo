@@ -27,39 +27,49 @@ export default async function handler(
     );
 
     if (!response.ok) {
-      return res.status(200).json({
+      return res.status(response.status).json({
         success: false,
         message: "Failed to fetch Cricbuzz page",
       });
-   }
+    }
+
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // -------------------------
-    // Team Flags
-    // -------------------------
+    // -------------------------------------------------
+    // Team Header (ENGW / RSAW + Flags)
+    // -------------------------------------------------
 
-    const flagImgs = $("div.flex.justify-between.bg-cbInactTab img");
+    const header = $("div.flex.justify-between.bg-cbInactTab").first();
 
-   const team1Flag = flagImgs.eq(0).attr("src") || "";
-   const team2Flag = flagImgs.eq(3).attr("src") || "";
+    const teamNames = header
+      .find("h1")
+      .map((_, el) => $(el).text().trim())
+      .get()
+      .filter(Boolean);
 
-  
+    const team1Name = teamNames[0] || "";
+    const team2Name = teamNames[1] || "";
 
-   // -------------------------
-  // Team Short Names
-  // -------------------------
+    const visibleFlags = header
+      .find("img")
+      .map((_, el) => $(el).attr("src"))
+      .get()
+      .filter(
+        (src) =>
+          !!src &&
+          src.startsWith("https://static.cricbuzz.com") &&
+          !src.includes("base64")
+      );
 
-const teamCodes = $("div.flex.justify-between.bg-cbInactTab h1")
-  .map((_, el) => $(el).text().trim())
-  .get();
+    const uniqueFlags = [...new Set(visibleFlags)];
 
-const team1Name = teamCodes[0] || "";
-const team2Name = teamCodes[1] || "";
+    const team1Flag = uniqueFlags[0] || "";
+    const team2Flag = uniqueFlags[1] || "";
 
-    // -------------------------
+    // -------------------------------------------------
     // Match Info
-    // -------------------------
+    // -------------------------------------------------
 
     const seriesName = $("title").text().trim();
 
@@ -69,9 +79,9 @@ const team2Name = teamCodes[1] || "";
     const matchTime = "";
     const matchFormat = "";
 
-    // -------------------------
+    // -------------------------------------------------
     // Players
-    // -------------------------
+    // -------------------------------------------------
 
     const teams: any[] = [];
 
@@ -82,7 +92,6 @@ const team2Name = teamCodes[1] || "";
         .find('a[href^="/profiles/"]')
         .each((__, el) => {
           const href = $(el).attr("href") || "";
-
           const profileId = href.split("/")[2] || "";
 
           const name = $(el)
@@ -97,10 +106,14 @@ const team2Name = teamCodes[1] || "";
             .text()
             .trim();
 
-          const image =
+          let image =
             $(el).find("img").attr("src") ||
             $(el).find("img").attr("srcset") ||
             "";
+
+          if (image.includes(",")) {
+            image = image.split(",")[0].split(" ")[0];
+          }
 
           const text = $(el).text();
 
