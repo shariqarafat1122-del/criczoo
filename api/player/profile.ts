@@ -37,13 +37,9 @@ export default async function handler(
     const batting = decoded.indexOf("Batting Style");
     const bowling = decoded.indexOf("Bowling Career Summary");
 
-    return res.status(200).json({
-  personal: decoded.indexOf("PERSONAL INFORMATION"),
-  born: decoded.indexOf("Born"),
-  batting: decoded.indexOf("Batting Style"),
-  teams: decoded.indexOf("Teams"),
-  tim: decoded.indexOf("Tim Seifert"),
-  title: decoded.indexOf("<title>")
+   return res.status(200).send(
+  decoded.substring(start, start + 6000)
+);
 });
 
   } catch (err: any) {
