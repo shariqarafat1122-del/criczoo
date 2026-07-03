@@ -1,8 +1,28 @@
-// api/cricbuzz-profile.js
-export default async function handler(req, res) {
-  const { profileId } = req.query; // e.g. "9443/tim-seifert" or just "9443"
+// api/player/profile.ts
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-  if (!profileId) {
+interface BattingFormEntry {
+  score: string;
+  opponent: string;
+  format: string;
+  date: string;
+}
+
+interface RankingEntry {
+  current: string;
+  best: string;
+}
+
+interface Rankings {
+  test: string;
+  odi: string;
+  t20i: string | RankingEntry;
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const { profileId } = req.query;
+
+  if (!profileId || typeof profileId !== "string") {
     return res.status(400).json({ success: false, error: "profileId is required" });
   }
 
@@ -32,19 +52,15 @@ export default async function handler(req, res) {
       });
     }
 
-    // 1. Extract the JSON-LD block (most reliable, structured source)
     const ldJsonMatch = html.match(
       /<script type="application\/ld\+json">(\{.*?"mainEntity".*?\})<\/script>/s
     );
 
-    let ld = null;
+    let ld: any = null;
     if (ldJsonMatch) {
       try {
-        // The RSC stream escapes quotes as \" — unescape before parsing
-        const raw = ldJsonMatch[1];
-        ld = JSON.parse(raw);
+        ld = JSON.parse(ldJsonMatch[1]);
       } catch {
-        // fallback: try regex-based unescape then parse
         try {
           const unescaped = ldJsonMatch[1].replace(/\\"/g, '"').replace(/\\\\/g, "\\");
           ld = JSON.parse(unescaped);
@@ -54,10 +70,9 @@ export default async function handler(req, res) {
       }
     }
 
-    const person = ld?.mainEntity || {};
+    const person: any = ld?.mainEntity || {};
 
-    // 2. Fallback field-level regex extraction (in case JSON-LD isn't found/parseable)
-    const grab = (key) => {
+    const grab = (key: string): string | null => {
       const m = html.match(new RegExp(`"${key}"\\s*:\\s*"([^"]*)"`));
       return m ? m[1].trim() : null;
     };
@@ -67,31 +82,26 @@ export default async function handler(req, res) {
     const birthPlace = person.birthPlace || grab("birthPlace");
     const role = person.jobTitle || grab("role");
     const nationality = person.nationality || grab("nationality");
-    const worksFor = person.worksFor || grab("worksFor");
+    const worksFor: string | null = person.worksFor || grab("worksFor");
 
-    // Batting/Bowling style: appear as plain labelled text in the page,
-    // not always in JSON-LD, so scan the "PERSONAL INFORMATION" block text.
     const battingStyleMatch = html.match(/Batting Style([A-Za-z\s]+?)(?:Bowling Style|Teams)/);
     const bowlingStyleMatch = html.match(/Bowling Style([A-Za-z\s]+?)(?:Teams|ICC)/);
 
-    // Teams: prefer worksFor (from JSON-LD, cleanest), else labelled block
-    let teams = [];
+    let teams: string[] = [];
     if (worksFor) {
-      teams = worksFor.split(",").map((t) => t.trim()).filter(Boolean);
+      teams = worksFor.split(",").map((t: string) => t.trim()).filter(Boolean);
     } else {
       const teamsBlockMatch = html.match(/Teams([A-Za-z0-9,\s]+?)(?:ICC RANKINGS|RECENT FORM)/);
       if (teamsBlockMatch) {
-        teams = teamsBlockMatch[1].split(",").map((t) => t.trim()).filter(Boolean);
+        teams = teamsBlockMatch[1].split(",").map((t: string) => t.trim()).filter(Boolean);
       }
     }
 
-    // ICC Rankings: Test/ODI/T20I current & best, for Batting/Bowling/All-Rounder
     const rankingsBlockMatch = html.match(
       /ICC RANKINGS(.*?)(?:SUMMARY|TEAMS\s|RECENT FORM)/s
     );
-    const parseRankings = (block) => {
+    const parseRankings = (block: string | undefined): Rankings | null => {
       if (!block) return null;
-      // crude table scrape: Test----ODI----T20I126 style sequences
       const testMatch = block.match(/Test(\S*?)(ODI|$)/);
       const odiMatch = block.match(/ODI(\S*?)(T20I|$)/);
       const t20Match = block.match(/T20I(\d*)(\d*)/);
@@ -103,26 +113,23 @@ export default async function handler(req, res) {
     };
     const iccRankings = parseRankings(rankingsBlockMatch?.[1]);
 
-    // Recent batting form: pattern like "0(3)LSGT20026 Apr 26"
     const formMatches = [
       ...html.matchAll(/(\d+\(\d+\))([A-Z]+)(T20I?|ODI|TEST)(\d{4} \w{3} \d{2})/g),
     ];
-    const battingForm = formMatches.slice(0, 5).map((m) => ({
+    const battingForm: BattingFormEntry[] = formMatches.slice(0, 5).map((m) => ({
       score: m[1],
       opponent: m[2],
       format: m[3],
       date: m[4],
     }));
 
-    // Career summary text
     const summaryMatch = html.match(/"summary":"(.*?)","/);
-    const careerSummary =
+    const careerSummary: string | null =
       person.description ||
       (summaryMatch
-        ? summaryMatch[1].replace(/\\"/g, '"').replace(/\\u2019/g, "’")
+        ? summaryMatch[1].replace(/\\"/g, '"').replace(/\\u2019/g, "'")
         : null);
 
-    // Player image: not always in ld+json; try imageId pattern near profile
     const imageIdMatch = html.match(/"imageId":(\d+)/);
     const playerImage = imageIdMatch
       ? `https://static.cricbuzz.com/a/img/v1/i1/c${imageIdMatch[1]}/i.jpg`
@@ -147,11 +154,12 @@ export default async function handler(req, res) {
 
     res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate");
     return res.status(200).json(cleanData);
-  } catch (err) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     return res.status(500).json({
       success: false,
       error: "Failed to fetch or parse profile",
-      details: err.message,
+      details: message,
     });
   }
 }
