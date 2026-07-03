@@ -27,20 +27,21 @@ export default async function handler(
 
     const html = await response.text();
 
+    const decoded = html
+      .replace(/\\u003c/g, "<")
+      .replace(/\\u003e/g, ">")
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, "\\");
+
     return res.status(200).json({
       success: true,
-      length: html.length,
-
-      hasName: html.includes("Tim Seifert"),
-      hasBorn: html.includes("Born"),
-      hasBatting: html.includes("Batting Style"),
-      hasBirthPlace: html.includes("Birth Place"),
-      hasBattingSummary: html.includes("Batting Career Summary"),
-      hasBowlingSummary: html.includes("Bowling Career Summary"),
-      
-      
-
-      html,
+      hasPersonal: decoded.includes("PERSONAL INFORMATION"),
+      hasBorn: decoded.includes("Born"),
+      hasBatting: decoded.includes("Batting Style"),
+      hasBowling: decoded.includes("Bowling Style"),
+      hasTeams: decoded.includes("Teams"),
+      hasName: decoded.includes("Tim Seifert"),
+      length: decoded.length,
     });
   } catch (err: any) {
     return res.status(500).json({
