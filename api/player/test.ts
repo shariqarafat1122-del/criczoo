@@ -93,19 +93,20 @@ export default async function handler(
     );
 
     
-    const battingStyle = battingStyle.replace(/Teams$/i, "").trim();
+   const battingStyle = getBetween(
+  bodyText,
+  "Batting Style",
+  "Teams"
+).replace(/Teams$/i, "").trim();
 
-    const image =
-      $('meta[property="og:image"]').attr("content") ||
-      "";
+let teams: string[] = [];
 
-// Teams
 const teamsHtml = decoded.match(/Teams([\s\S]*?)Related Articles/i);
 
 if (teamsHtml) {
   teams = clean(teamsHtml[1])
     .split(",")
-    .map(t => t.trim())
+    .map((t: string) => t.trim())
     .filter(Boolean);
 }
 
