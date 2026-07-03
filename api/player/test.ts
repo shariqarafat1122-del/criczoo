@@ -125,7 +125,8 @@ const summary = getBetween(
 );
 
 // ICC Rankings
-const rankings = [];
+const rankings: any[] = [];
+
 const rankingBlock = getBetween(
   bodyText,
   "ICC RANKINGS",
@@ -143,8 +144,8 @@ if (rankingBlock) {
 
     rankings.push({
       format,
-      current: m?.[1] || "-",
-      best: m?.[2] || "-",
+      current: m?.[1] ?? "-",
+      best: m?.[2] ?? "-",
     });
   });
 }
