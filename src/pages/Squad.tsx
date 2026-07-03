@@ -27,10 +27,16 @@ interface SquadAPIResponse {
   success: boolean;
   team1Name: string;
   team2Name: string;
+  
   team1Short: string;
   team2Short: string;
+  
   team1Flag: string;
   team2Flag: string;
+
+  team1ImageId?: number | string;
+  team2ImageId?: number | string;
+  
   seriesName?: string;
   venue?: string;
   matchStatus?: string;
