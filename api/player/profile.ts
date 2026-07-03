@@ -5,16 +5,16 @@ export default async function handler(
   res: VercelResponse
 ) {
   try {
-    const { matchId } = req.query;
+    const { profileId, slug } = req.query;
 
-    if (!matchId) {
+    if (!profileId) {
       return res.status(400).json({
         error: "matchId is required",
       });
     }
 
     const response = await fetch(
-      "https://www.cricbuzz.com/profiles/9443/tim-seifert",
+      `https://www.cricbuzz.com/profiles/${profileId}/${slug}`,
       {
         headers: {
           "User-Agent":
