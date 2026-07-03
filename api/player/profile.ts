@@ -38,6 +38,13 @@ export default async function handler(
     const bowling = decoded.indexOf("Bowling Career Summary");
 
     return res.status(200).json({
+  personal: decoded.indexOf("PERSONAL INFORMATION"),
+  born: decoded.indexOf("Born"),
+  batting: decoded.indexOf("Batting Style"),
+  teams: decoded.indexOf("Teams"),
+  tim: decoded.indexOf("Tim Seifert"),
+  title: decoded.indexOf("<title>")
+});
     });
   } catch (err: any) {
     return res.status(500).json({
