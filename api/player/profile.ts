@@ -84,16 +84,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return m ? m[1].trim() : null;
     };
 
-    const name = person.name || grab("name");
+    const bowlingStyleText = html.match(/(Right-arm[^<\n]+|Left-arm[^<\n]+)/i);
+    const battingStyleMatch = html.match(/Batting Style[\s\S]{0,200}?Right Handed Bat|Left Handed Bat/i);
+    const roleMatch = html.match(/Role\s*<\/[^>]+>\s*<[^>]+>([^<]+)/i);
+    const nameMatch = html.match(/<span[^>]*class="[^"]*text-xl[^"]*"[^>]*>([^<]+)<\/span>/i);
+    const name = nameMatch?.[1]?.trim() || person.name || grab("name");
     const birthDate = person.birthDate || grab("birthDate") || grab("born");
     const birthPlace = person.birthPlace || grab("birthPlace");
-    const role = person.jobTitle || grab("role");
+    const role = roleMatch?.[1]?.trim() || person.jobTitle || grab("role");
     const nationality = person.nationality || grab("nationality");
     const worksFor: string | null = person.worksFor || grab("worksFor");
+    const battingStyle = battingStyleMatch?.[0]?.replace(/Batting Style/i, "").trim() ?? null;
+    const bowlingStyle = bowlingStyleText?.[1]?.trim() ?? null;
 
-    const battingStyleMatch = html.match(/Batting Style([A-Za-z\s]+?)(?:Bowling Style|Teams)/);
-    const bowlingStyleMatch = html.match(/Bowling Style([A-Za-z\s]+?)(?:Teams|ICC)/);
-
+    
     let teams: string[] = [];
     if (worksFor) {
       teams = worksFor.split(",").map((t: string) => t.trim()).filter(Boolean);
@@ -111,7 +115,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!block) return null;
       const testMatch = block.match(/Test(\S*?)(ODI|$)/);
       const odiMatch = block.match(/ODI(\S*?)(T20I|$)/);
-      const t20Match = block.match(/T20I(\d*)(\d*)/);
+      const row = block.match(/T20I\s+(\d+|--)\s+(\d+|--)/);
       return {
         test: testMatch ? testMatch[1] : "-",
         odi: odiMatch ? odiMatch[1] : "-",
@@ -137,10 +141,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? summaryMatch[1].replace(/\\"/g, '"').replace(/\\u2019/g, "'")
         : null);
 
-    const imageIdMatch = html.match(/"imageId":(\d+)/);
-    const playerImage = imageIdMatch
-      ? `https://static.cricbuzz.com/a/img/v1/i1/c${imageIdMatch[1]}/i.jpg`
-      : null;
+    const imageMatch = html.match(/src="(https:\/\/static\.cricbuzz\.com\/a\/img\/v1\/i1\/c\d+\/[^"]+)"/i);
+     const playerImage = imageMatch?.[1] ?? null;
 
     const cleanData = {
       success: true,
