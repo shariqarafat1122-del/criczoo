@@ -71,7 +71,8 @@ export default async function handler(
         .replace(/Cricbuzz.*/i, "")
         .trim();
 
-    const country = country.replace("PERSONAL INFORMATION", "").trim();
+    let country = getBetween(bodyText, name, "PERSONAL INFORMATION");
+      country = country.replace("PERSONAL INFORMATION", "").trim();
 
     const born = getBetween(
       bodyText,
@@ -91,7 +92,7 @@ export default async function handler(
       "Batting Style"
     );
 
-    const battingStyle = getBetween( bodyText, "Batting Style", "Teams");
+    
     const battingStyle = battingStyle.replace(/Teams$/i, "").trim();
 
     const image =
@@ -100,8 +101,6 @@ export default async function handler(
 
 // Teams
 const teamsHtml = decoded.match(/Teams([\s\S]*?)Related Articles/i);
-
-let teams: string[] = [];
 
 if (teamsHtml) {
   teams = clean(teamsHtml[1])
@@ -112,7 +111,7 @@ if (teamsHtml) {
 
 const teams = teamsText
   .split(",")
-  .map(t => clean(t))
+  .map((t: string) => clean(t))
   .filter(Boolean);
 
 // Summary
@@ -214,7 +213,7 @@ while ((tm = timelineRegex.exec(timelineBlock)) !== null) {
 const battingCareer = {};
 const bowlingCareer = {};
 
-    return res.status(200).json({
+  return res.status(200).json({
   success: true,
   profileId,
   name,
