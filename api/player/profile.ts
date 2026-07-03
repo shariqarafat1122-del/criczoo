@@ -34,7 +34,7 @@ export default async function handler(
       .replace(/\\"/g, '"')
       .replace(/\\\\/g, "\\");
 
-";
+
 
 // decoded HTML milne ke baad
 const decoded = decodeURIComponent(html);
