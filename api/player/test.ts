@@ -71,11 +71,7 @@ export default async function handler(
         .replace(/Cricbuzz.*/i, "")
         .trim();
 
-    const country = getBetween(
-      bodyText,
-      name,
-      "Born"
-    );
+    const country = country.replace("PERSONAL INFORMATION", "").trim();
 
     const born = getBetween(
       bodyText,
@@ -95,22 +91,24 @@ export default async function handler(
       "Batting Style"
     );
 
-    const battingStyle = getBetween(
-      bodyText,
-      "Batting Style",
-      "ICC RANKINGS"
-    );
+    const battingStyle = getBetween( bodyText, "Batting Style", "Teams");
+    const battingStyle = battingStyle.replace(/Teams$/i, "").trim();
 
     const image =
       $('meta[property="og:image"]').attr("content") ||
       "";
 
 // Teams
-const teamsText = getBetween(
-  bodyText,
-  "Teams",
-  "Related Articles"
-);
+const teamsHtml = decoded.match(/Teams([\s\S]*?)Related Articles/i);
+
+let teams: string[] = [];
+
+if (teamsHtml) {
+  teams = clean(teamsHtml[1])
+    .split(",")
+    .map(t => t.trim())
+    .filter(Boolean);
+}
 
 const teams = teamsText
   .split(",")
