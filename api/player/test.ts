@@ -110,10 +110,6 @@ if (teamsHtml) {
     .filter(Boolean);
 }
 
-const teams = teamsText
-  .split(",")
-  .map((t: string) => clean(t))
-  .filter(Boolean);
 
 // Summary
 const summary = getBetween(
