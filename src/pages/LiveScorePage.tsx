@@ -1566,9 +1566,6 @@ export default function LiveScorePage() {
 
             
             {pageTab === "squad" && <Squad />}
-           
-            
-
             {pageTab === "info" && (
               <>
                 <MatchSummary mh={mh} status={data?.status} />
@@ -1578,34 +1575,7 @@ export default function LiveScorePage() {
                 {data?.matchNotes && <MatchNotes notes={data.matchNotes} />}
               </>
             )}
-
-            <div className="bg-white dark:bg-[#111815] rounded-3xl border border-black/[0.04] dark:border-white/[0.06] px-4 sm:px-5 py-4 text-xs sm:text-[11.5px] text-gray-400 dark:text-gray-600 flex flex-wrap items-center justify-between gap-3 w-full">
-              <div className="flex items-center gap-4 flex-wrap min-w-0">
-                {lastUpdated && (
-                  <span>
-                    Last updated{" "}
-                    {lastUpdated.toLocaleTimeString("en-IN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                    })}
-                  </span>
-                )}
-                {!data?.isMatchComplete && (
-                  <span className="inline-flex items-center gap-1.5 text-[#009270] dark:text-[#3ddba4] font-semibold">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#009270] dark:bg-[#3ddba4] animate-pulse flex-shrink-0" />
-                    Live — refreshing every 30s
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={fetchData}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-[#00b884] to-[#009270] text-white rounded-full font-bold hover:brightness-105 active:scale-95 transition-all duration-200 flex-shrink-0"
-              >
-                <Icon.Refresh className="h-3.5 w-3.5" />
-                Refresh
-              </button>
-            </div>
+             
           </main>
         </>
       )}
