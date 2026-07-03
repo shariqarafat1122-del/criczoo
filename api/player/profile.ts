@@ -1,74 +1,50 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import * as cheerio from "cheerio";
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+function clean(text: string) {
+  return text.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function extractBetween(source: string, start: string, end: string) {
+  const s = source.indexOf(start);
+  if (s === -1) return "";
+  const from = s + start.length;
+  const e = end ? source.indexOf(end, from) : -1;
+  return clean(e === -1 ? source.substring(from) : source.substring(from, e));
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const { profileId } = req.query;
+    const profileId = String(req.query.profileId || "").trim();
+    if (!profileId) return res.status(400).json({success:false,message:"profileId is required"});
 
-    if (!profileId) {
-      return res.status(400).json({
-        success: false,
-        message: "profileId is required",
-      });
-    }
-
-    const response = await fetch(
-      `https://www.cricbuzz.com/profiles/${profileId}`,
-      {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138 Safari/537.36",
-          Accept: "text/html",
-        },
+    const response = await fetch(`https://www.cricbuzz.com/profiles/${profileId}`,{
+      headers:{
+        "User-Agent":"Mozilla/5.0",
+        "Accept":"text/html"
       }
-    );
+    });
 
     const html = await response.text();
 
     const decoded = html
-      .replace(/\\u003c/g, "<")
-      .replace(/\\u003e/g, ">")
-      .replace(/\\"/g, '"')
-      .replace(/\\\\/g, "\\");
+      .replace(/\\u003c/g,"<")
+      .replace(/\\u003e/g,">")
+      .replace(/\\\"/g,'"')
+      .replace(/\\\\/g,"\\");
 
+    const text = clean(decoded);
 
-
-// YAHAN
-const $ = cheerio.load(decoded);
-
-const born = $("*:contains('Born')").next().text().trim();
-
-const birthPlace = $("*:contains('Birth Place')").next().text().trim();
-
-const role = $("*:contains('Role')").next().text().trim();
-
-const battingStyle = $("*:contains('Batting Style')").next().text().trim();
-
-const teams = $("*:contains('Teams')")
-  .next()
-  .text()
-  .replace(/\s+/g, " ")
-  .trim();
-
-
-
-       return res.status(200).json({
-       success: true,
-       born,
-       birthPlace,
-       role,
-       battingStyle,
-       teams,
+    return res.status(200).json({
+      success:true,
+      profileId,
+      born: extractBetween(text,"Born","Birth Place"),
+      birthPlace: extractBetween(text,"Birth Place","Role"),
+      role: extractBetween(text,"Role","Batting Style"),
+      battingStyle: extractBetween(text,"Batting Style","ICC RANKINGS"),
+      teams: extractBetween(text,"Teams","Related Articles"),
+      summary: extractBetween(text,"SUMMARY","APPS")
     });
-
-
-  } catch (err: any) {
-    return res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+  } catch(err:any){
+    return res.status(500).json({success:false,error:err?.message});
   }
 }
