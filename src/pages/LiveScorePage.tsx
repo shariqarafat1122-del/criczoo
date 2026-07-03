@@ -1407,24 +1407,18 @@ const MatchNotes = ({ notes }: { notes?: string[] }) => {
    PAGE TABS
    ═════════════════════════════════════════════════════════════════════ */
 
-// TODO: "live" aur "squad" ko yahan add kiya hai — order: Live, Scorecard, Squad
 type PageTab = "live" | "scorecard" | "squad" | "info";
 
 const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = ({ active, onChange }) => {
-  // TODO: Yahan tabs ka order set kiya hai — Live -> Scorecard -> Squad
-  // "info" tab ko waise hi rehne diya hai (agar chahiye to hata sakte ho)
-  // Icon.Live / Icon.Squad abhi Icon object mein exist nahi karte —
-  // upar wale Icon component mein khud se add kar lena (jaise Icon.Bat / Icon.Info bane hain)
   const tabs: { id: PageTab; label: string; icon: React.ReactNode }[] = [
-    { id: "live", label: "Live", icon: <Icon.Bat className="h-3.5 w-3.5" /> }, // TODO: Icon.Live banao
-    { id: "scorecard", label: "Scorecard", icon: <Icon.Bat className="h-3.5 w-3.5" /> },
-    { id: "squad", label: "Squad", icon: <Icon.Info className="h-3.5 w-3.5" /> }, // TODO: Icon.Squad banao
-    { id: "info", label: "Info", icon: <Icon.Info className="h-3.5 w-3.5" /> },
+    { id: "live", label: "Live", icon: <Icon.Live className="h-3.5 w-3.5 shrink-0" /> },
+    { id: "scorecard", label: "Scorecard", icon: <Icon.Bat className="h-3.5 w-3.5 shrink-0" /> },
+    { id: "squad", label: "Squad", icon: <Icon.Squad className="h-3.5 w-3.5 shrink-0" /> },
+    { id: "info", label: "Info", icon: <Icon.Info className="h-3.5 w-3.5 shrink-0" /> },
   ];
-
   return (
     <div className="sticky top-[118px] sm:top-[126px] z-40 mb-5 pt-1 w-full">
-      <div className="flex gap-1.5 p-1.5 bg-white/85 dark:bg-[#111815]/85 backdrop-blur-xl rounded-2xl border border-black/[0.05] dark:border-white/[0.06] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.08)]">
+      <div className="flex gap-1 sm:gap-1.5 p-1.5 bg-white/85 dark:bg-[#111815]/85 backdrop-blur-xl rounded-2xl border border-black/[0.05] dark:border-white/[0.06] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.08)] overflow-hidden">
         {tabs.map((t) => {
           const isActive = active === t.id;
           return (
@@ -1432,14 +1426,14 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
               key={t.id}
               onClick={() => onChange(t.id)}
               className={cx(
-                "flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs sm:text-[13px] font-bold transition-all duration-250",
+                "flex-1 min-w-0 inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-4 py-2.5 text-[11px] sm:text-[13px] font-bold transition-all duration-250",
                 isActive
                   ? "bg-gradient-to-r from-[#00b884] to-[#009270] text-white shadow-sm shadow-[#009270]/30"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]"
               )}
             >
               {t.icon}
-              {t.label}
+              <span className="truncate">{t.label}</span>
             </button>
           );
         })}
