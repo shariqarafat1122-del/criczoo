@@ -47,11 +47,18 @@ interface SquadAPIResponse {
 const cx = (...c: (string | false | undefined | null)[]) =>
   c.filter(Boolean).join(" ");
 
-const initials = (name: string) => {
-  const p = name.trim().split(/\s+/);
-  return p.length >= 2
-    ? (p[0][0] + p[p.length - 1][0]).toUpperCase()
-    : name.slice(0, 2).toUpperCase();
+const initials = (name?: string) => {
+  const safeName = (name ?? "").trim();
+
+  if (!safeName) {
+    return "?";
+  }
+
+  const parts = safeName.split(/\s+/);
+
+  return parts.length >= 2
+    ? (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
+    : safeName.slice(0, 2).toUpperCase();
 };
 
 const roleLabel = (r?: string): string => {
