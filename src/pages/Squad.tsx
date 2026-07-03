@@ -803,8 +803,7 @@ const handleBack = useCallback(() => {
         }
       `}</style>
 
-      {/* Header */}
-      <StickyHeader onBack={handleBack} />
+     
 
       {/* Loading */}
       {loading && !data && <FullSkeleton />}
@@ -827,8 +826,7 @@ const handleBack = useCallback(() => {
             </div>
           )}
 
-          {/* Match Info */}
-          <MatchInfoCard d={data} />
+          
 
           {/* Team Tabs */}
           <TeamTabs
