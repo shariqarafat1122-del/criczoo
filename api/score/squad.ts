@@ -27,12 +27,11 @@ export default async function handler(
     );
 
     if (!response.ok) {
-      return res.status(200).send(html);
+      return res.status(200).json({
         success: false,
         message: "Failed to fetch Cricbuzz page",
       });
-    
-
+   }
     const html = await response.text();
     const $ = cheerio.load(html);
 
@@ -48,17 +47,18 @@ export default async function handler(
     const team1Flag = flags[0] || "";
     const team2Flag = flags[1] || "";
 
-    // -------------------------
-    // Team Names
-    // -------------------------
+  
 
-    const headings = $("h1")
-      .map((_, el) => $(el).text().trim())
-      .get()
-      .filter(Boolean);
+   // -------------------------
+  // Team Short Names
+  // -------------------------
 
-    const team1Name = headings[0] || "Team 1";
-    const team2Name = headings[1] || "Team 2";
+const teamCodes = $("div.flex.justify-between.bg-cbInactTab h1")
+  .map((_, el) => $(el).text().trim())
+  .get();
+
+const team1Name = teamCodes[0] || "";
+const team2Name = teamCodes[1] || "";
 
     // -------------------------
     // Match Info
