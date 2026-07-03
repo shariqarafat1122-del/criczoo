@@ -27,6 +27,11 @@ export default async function handler(
 
     const html = await response.text();
 
+    const flagRegex = /<img[^>]+src="(https:\/\/static\.cricbuzz\.com[^"]+)"/g;
+    const flags = [...html.matchAll(flagRegex)].map(m => m[1]);
+    const team1Flag = flags[0] || "";
+    const team2Flag = flags[1] || "";
+
     const $ = cheerio.load(html);
 
     const teams: any[] = [];
