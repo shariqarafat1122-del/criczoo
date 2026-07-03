@@ -1564,7 +1564,7 @@ export default function LiveScorePage() {
               </>
             )}
 
-            //Render Squad Page
+            
             {pageTab === "squad" && <Squad />}
            
             
