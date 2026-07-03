@@ -33,13 +33,39 @@ export default async function handler(
       .replace(/\\"/g, '"')
       .replace(/\\\\/g, "\\");
 
-    const start = decoded.indexOf("PERSONAL INFORMATION");
-    const batting = decoded.indexOf("Batting Style");
-    const bowling = decoded.indexOf("Bowling Career Summary");
+    const personal = decoded.match(
+  /PERSONAL INFORMATION([\s\S]*?)ICC RANKINGS/i
+)?.[1] || "";
 
-   return res.status(200).send(
-  decoded.substring(start, start + 6000)
-);
+const born =
+  personal.match(/Born\s*([\s\S]*?)Birth Place/i)?.[1]?.trim() || "";
+
+const birthPlace =
+  personal.match(/Birth Place\s*([\s\S]*?)Role/i)?.[1]?.trim() || "";
+
+const role =
+  personal.match(/Role\s*([\s\S]*?)Batting Style/i)?.[1]?.trim() || "";
+
+const battingStyle =
+  personal.match(/Batting Style\s*([\s\S]*?)Teams/i)?.[1]?.trim() || "";
+
+const BowlingSummary =
+  personal.match(/Bowling Career Summary\s*([\s\S]*?)Bowling Career Summary/i)?.[1]?.trim() || "";
+
+const teams =
+  personal.match(/Teams\s*([\s\S]*)/)?.[1]
+    ?.replace(/\s+/g, " ")
+    .trim() || "";
+
+       return res.status(200).send({
+       success: true,
+       born,
+       birthPlace,
+       role,
+       battingStyle,
+       BowlingSummary,
+       teams,
+    });
 
 
   } catch (err: any) {
