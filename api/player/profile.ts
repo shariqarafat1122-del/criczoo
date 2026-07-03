@@ -86,7 +86,7 @@ const grabFromPerson = (key: string): string | null => {
   return m ? m[1].trim() : null;
 };
 
-const name = person.name || grabFromPerson("name");
+const name = person.name || grabFromPerson("playerName");
 const birthDate = person.birthDate || grabFromPerson("birthDate");
 const birthPlace = person.birthPlace || grabFromPerson("birthPlace");
 const nationality = person.nationality || grabFromPerson("nationality");
@@ -147,10 +147,10 @@ const bowlingStyle = bowlingStyleMatch ? bowlingStyleMatch[1].trim() : null;
         ? summaryMatch[1].replace(/\\"/g, '"').replace(/\\u2019/g, "'")
         : null);
 
-    const imageIdMatch = html.match(/"imageId":(\d+)/);
-    const playerImage = imageIdMatch
-      ? `https://static.cricbuzz.com/a/img/v1/i1/c${imageIdMatch[1]}/i.jpg`
-      : null;
+
+    const imageMatch = html.match(/src="(https:\/\/static\.cricbuzz\.com\/a\/img\/v1\/i1\/c\d+\/[^"]+)"/i);
+    
+    const playerImage = imageMatch?.[1] ?? null;
 
     const cleanData = {
       success: true,
