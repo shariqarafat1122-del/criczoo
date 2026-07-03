@@ -77,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const person: any = ld?.mainEntity || {};
 
-    // Scope name/nationality/birthDate/birthPlace to the mainEntity Person block only,
+// Scope name/nationality/birthDate/birthPlace to the mainEntity Person block only,
 // never to the whole HTML — avoids matching the site-wide Organization schema.
 const grabFromPerson = (key: string): string | null => {
   if (!ldJsonMatch) return null;
@@ -86,7 +86,7 @@ const grabFromPerson = (key: string): string | null => {
   return m ? m[1].trim() : null;
 };
 
-
+const name = person.name || grabFromPerson("name");
 const birthDate = person.birthDate || grabFromPerson("birthDate");
 const birthPlace = person.birthPlace || grabFromPerson("birthPlace");
 const nationality = person.nationality || grabFromPerson("nationality");
@@ -95,11 +95,8 @@ const worksFor: string | null = person.worksFor || grabFromPerson("worksFor");
 // role / battingStyle / bowlingStyle are NOT in JSON-LD — only in the
 // plain-text "PERSONAL INFORMATION" block, so grab() (JSON key:value) never finds them.
 // Parse that text block directly instead:
-    
-const roleMatch = html.match(/Role[\s\S]{0,80}?WK-Batsman|Batsman|Bowler|All-Rounder/i);
+const roleMatch = html.match(/\bRole([A-Za-z\-\/ ]+?)Batting Style/);
 const role = roleMatch ? roleMatch[1].trim() : null;
-const nameMatch = html.match(/<span[^>]*class="[^"]*text-xl[^"]*"[^>]*>([^<]+)<\/span>/i);
-const name = nameMatch?.[1]?.trim() || person.name || grabFromPerson("name") || null;
 
 const battingStyleMatch = html.match(/Batting Style([A-Za-z ]+?)Teams/);
 const battingStyle = battingStyleMatch ? battingStyleMatch[1].trim() : null;
