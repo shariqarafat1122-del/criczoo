@@ -36,9 +36,6 @@ export default async function handler(
 
 
 
-// decoded HTML milne ke baad
-const decoded = decodeURIComponent(html);
-
 // YAHAN
 const $ = cheerio.load(decoded);
 
