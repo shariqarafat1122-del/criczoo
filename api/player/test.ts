@@ -92,7 +92,8 @@ export default async function handler(
       "Batting Style"
     );
 
-    
+  const image =
+  $('meta[property="og:image"]').attr("content") || "";
    const battingStyle = getBetween(
   bodyText,
   "Batting Style",
@@ -215,7 +216,7 @@ const bowlingCareer = {};
   profileId,
   name,
   country,
-  image: playerImage,
+  image,
   born,
   birthPlace,
   role,
