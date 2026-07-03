@@ -1,6 +1,19 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import * as cheerio from "cheerio";
 
+
+function createProfileSlug(profileId: string, name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/['".]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `${profileId}/${slug}`;
+}
+
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
@@ -118,13 +131,14 @@ export default async function handler(
           const text = $(el).text();
 
           players.push({
-            profileId,
-            name,
-            role,
-            captain: text.includes("(C)"),
-            keeper: text.includes("(WK)"),
-            image,
-          });
+           profileId,
+           profileSlug: createProfileSlug(profileId, name),
+           name,
+           role,
+           captain: text.includes("(C)"),
+           keeper: text.includes("(WK)"),
+           image,
+           });
         });
 
       if (players.length) {
