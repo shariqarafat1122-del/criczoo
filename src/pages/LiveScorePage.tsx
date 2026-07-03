@@ -1446,8 +1446,6 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
   );
 };
 
-info tab mobile bahar ja raha right side mein responsive bana bas yahi code ko fixed karo
-
 /* ═════════════════════════════════════════════════════════════════════
    MAIN PAGE COMPONENT
    ═════════════════════════════════════════════════════════════════════ */
