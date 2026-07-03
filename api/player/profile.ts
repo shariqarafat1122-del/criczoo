@@ -1,46 +1,49 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import * as cheerio from "cheerio";
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
   try {
-    const { profileId, slug } = req.query;
+    const { profileUrl } = req.query;
 
-    if (!profileId) {
+    if (!profileUrl) {
       return res.status(400).json({
-        error: "matchId is required",
+        success: false,
+        message: "profileUrl is required",
       });
     }
 
-    const response = await fetch(
-      `https://www.cricbuzz.com/profiles/${profileId}/${slug}`,
-      {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/137.0.0.0 Safari/537.36",
-          "Accept": "text/html",
-        },
-      }
-    );
+    const response = await fetch(profileUrl as string, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/137 Safari/537.36",
+        Accept: "text/html",
+      },
+    });
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: `Cricbuzz returned ${response.status}`,
+        success: false,
+        message: "Failed to fetch player page",
       });
     }
 
     const html = await response.text();
 
-    // Raw HTML return karega
-    return res
-      .status(200)
-      .setHeader("Content-Type", "text/html; charset=utf-8")
-      .send(html);
+    const $ = cheerio.load(html);
 
-  } catch (error: any) {
+    // Ab yahan parsing hogi
+    // const name = ...
+    // const image = ...
+    // const role = ...
+
+    return res.status(200).send(html); // Test ke liye
+  } catch (e: any) {
     return res.status(500).json({
-      error: error.message,
+      success: false,
+      error: e.message,
     });
   }
 }
