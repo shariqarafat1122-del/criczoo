@@ -915,7 +915,6 @@ export default function Squad() {
       team2Name: matchInfo.team2.teamName,
 
       seriesName: matchInfo.seriesName,
-      matchDesc: matchInfo.matchDesc,
       matchFormat: matchInfo.matchFormat,
 
       status: matchInfo.status,
