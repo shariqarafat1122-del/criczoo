@@ -886,20 +886,8 @@ const squad: SquadAPIResponse = await squadRes.json();
 if (!squad.success) {
   throw new Error("Squad data unavailable.");
 }
-
 setData(squad);
-
-    setData({
-      ...squad,
-
-      team1Name: matchInfo.team1.teamName,
-      team2Name: matchInfo.team2.teamName,
-      seriesName: matchInfo.seriesName,
-      matchFormat: matchInfo.matchFormat,
-      matchStatus: matchInfo.matchStatus,
-      venue: matchInfo.venueInfo?.ground,
-      matchTime: matchInfo.matchTime,
-    });
+    
   } catch (e) {
     setError(e instanceof Error ? e.message : "Failed to fetch squad.");
   } finally {
