@@ -856,31 +856,77 @@ export default function Squad() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<0 | 1>(0);
 
-  const fetchSquad = useCallback(async () => {
-    if (!matchId) {
-      setError("No match ID provided.");
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch(`/api/score/squad?matchId=${matchId}`, {
+ const fetchSquad = useCallback(async () => {
+  if (!matchId) {
+    setError("No match ID provided.");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError(null);
+
+    const [homeRes, squadRes] = await Promise.all([
+      fetch("/api/score/home", {
         cache: "no-store",
-      });
-      if (!res.ok)
-        throw new Error(
-          `API returned ${res.status}: ${res.statusText || "Unknown error"}`
-        );
-      const json: SquadAPIResponse = await res.json();
-      if (!json.success) throw new Error("Squad data unavailable.");
-      setData(json);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to fetch squad.");
-    } finally {
-      setLoading(false);
+      }),
+      fetch(`/api/score/squad?matchId=${matchId}`, {
+        cache: "no-store",
+      }),
+    ]);
+
+    if (!homeRes.ok) {
+      throw new Error("Failed to load home data.");
     }
-  }, [matchId]);
+
+    if (!squadRes.ok) {
+      throw new Error("Failed to load squad.");
+    }
+
+    const home = await homeRes.json();
+    const squad: SquadAPIResponse = await squadRes.json();
+
+    const match = home.matches.find(
+      (m: any) =>
+        Number(m.match.matchInfo.matchId) === Number(matchId)
+    );
+
+    if (!match) {
+      throw new Error("Match not found.");
+    }
+
+    const matchInfo = match.match.matchInfo;
+
+    setData({
+      ...squad,
+
+      team1Name: matchInfo.team1.teamName,
+      team2Name: matchInfo.team2.teamName,
+
+      team1Short: matchInfo.team1.teamSName,
+      team2Short: matchInfo.team2.teamSName,
+
+      team1ImageId: matchInfo.team1.imageId,
+      team2ImageId: matchInfo.team2.imageId,
+
+      seriesName: matchInfo.seriesName,
+      matchDesc: matchInfo.matchDesc,
+      matchFormat: matchInfo.matchFormat,
+
+      status: matchInfo.status,
+
+      venue: matchInfo.venueInfo?.ground,
+      city: matchInfo.venueInfo?.city,
+
+      startDate: matchInfo.startDate,
+    });
+  } catch (e) {
+    setError(e instanceof Error ? e.message : "Failed to fetch squad.");
+  } finally {
+    setLoading(false);
+  }
+}, [matchId]);
 
   useEffect(() => {
     fetchSquad();
