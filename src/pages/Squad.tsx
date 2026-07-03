@@ -27,17 +27,11 @@ interface SquadAPIResponse {
   success: boolean;
   team1Name: string;
   team2Name: string;
-  
-  team1Flag: string;
-  team2Flag: string;
-
   seriesName?: string;
-  venue?: string;
   matchStatus?: string;
   matchDate?: string;
   matchTime?: string;
   matchFormat?: string;
-  matchDescription?: string;
   team1: Player[];
   team2: Player[];
 }
