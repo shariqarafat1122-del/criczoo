@@ -27,11 +27,11 @@ export default async function handler(
     );
 
     if (!response.ok) {
-      return res.status(response.status).json({
+      return res.status(200).send(html);
         success: false,
         message: "Failed to fetch Cricbuzz page",
       });
-    }
+    
 
     const html = await response.text();
     const $ = cheerio.load(html);
