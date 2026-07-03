@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
+import LiveMatch from "./LiveMatch";
+import Squad from "./Squad";
 
 /* ═════════════════════════════════════════════════════════════════════
    TYPES — mirrors the Cricbuzz scorecard API response
@@ -1405,11 +1407,18 @@ const MatchNotes = ({ notes }: { notes?: string[] }) => {
    PAGE TABS
    ═════════════════════════════════════════════════════════════════════ */
 
-type PageTab = "scorecard" | "info";
+// TODO: "live" aur "squad" ko yahan add kiya hai — order: Live, Scorecard, Squad
+type PageTab = "live" | "scorecard" | "squad" | "info";
 
 const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = ({ active, onChange }) => {
+  // TODO: Yahan tabs ka order set kiya hai — Live -> Scorecard -> Squad
+  // "info" tab ko waise hi rehne diya hai (agar chahiye to hata sakte ho)
+  // Icon.Live / Icon.Squad abhi Icon object mein exist nahi karte —
+  // upar wale Icon component mein khud se add kar lena (jaise Icon.Bat / Icon.Info bane hain)
   const tabs: { id: PageTab; label: string; icon: React.ReactNode }[] = [
+    { id: "live", label: "Live", icon: <Icon.Bat className="h-3.5 w-3.5" /> }, // TODO: Icon.Live banao
     { id: "scorecard", label: "Scorecard", icon: <Icon.Bat className="h-3.5 w-3.5" /> },
+    { id: "squad", label: "Squad", icon: <Icon.Info className="h-3.5 w-3.5" /> }, // TODO: Icon.Squad banao
     { id: "info", label: "Info", icon: <Icon.Info className="h-3.5 w-3.5" /> },
   ];
 
@@ -1450,7 +1459,8 @@ export default function LiveScorePage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [activeInnings, setActiveInnings] = useState(0);
-  const [pageTab, setPageTab] = useState<PageTab>("scorecard");
+  // TODO: default tab "live" set kiya hai kyunki Live pehla tab hai (order: Live, Scorecard, Squad)
+  const [pageTab, setPageTab] = useState<PageTab>("live");
   const { matchId } = useParams<{ matchId: string }>();
 
   const fetchData = useCallback(async () => {
@@ -1542,13 +1552,12 @@ export default function LiveScorePage() {
 
             <PageTabs active={pageTab} onChange={setPageTab} />
 
-            {pageTab === "info" && (
+            
+               
+                
+                {pageTab === "live" && (
               <>
-                <MatchSummary mh={mh} status={data?.status} />
-                <MatchInformation mh={mh} />
-                {data?.playingxi && <PlayingXI data={data.playingxi} mh={mh} />}
-                {data?.bench && <BenchSection data={data.bench} mh={mh} />}
-                {data?.matchNotes && <MatchNotes notes={data.matchNotes} />}
+              <LiveMatch matchId={matchId} />
               </>
             )}
 
@@ -1558,6 +1567,23 @@ export default function LiveScorePage() {
                 {visibleInnings && (
                   <InningsCard key={visibleInnings.inningsId ?? activeInnings} innings={visibleInnings} />
                 )}
+              </>
+            )}
+
+            
+                
+                
+            {pageTab === "squad" && (
+           <Squad matchId={matchId} />
+            )}
+
+            {pageTab === "info" && (
+              <>
+                <MatchSummary mh={mh} status={data?.status} />
+                <MatchInformation mh={mh} />
+                {data?.playingxi && <PlayingXI data={data.playingxi} mh={mh} />}
+                {data?.bench && <BenchSection data={data.bench} mh={mh} />}
+                {data?.matchNotes && <MatchNotes notes={data.matchNotes} />}
               </>
             )}
 
