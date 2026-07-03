@@ -33,9 +33,9 @@ export default async function handler(
       .replace(/\\"/g, '"')
       .replace(/\\\\/g, "\\");
 
-    const start = decoded.indexOF("PERSONAL INFORMATION");
-    const batting = decoded.indexOF("Batting Style");
-    const bowling = decoded.indexOF("Bowling Career Summary");
+    const start = decoded.indexOf("PERSONAL INFORMATION");
+    const batting = decoded.indexOf("Batting Style");
+    const bowling = decoded.indexOf("Bowling Career Summary");
 
     return res.status(200).json({
     });
