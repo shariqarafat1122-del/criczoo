@@ -38,10 +38,11 @@ export default async function handler(
       hasPersonal: decoded.includes("PERSONAL INFORMATION"),
       hasBorn: decoded.includes("Born"),
       hasBatting: decoded.includes("Batting Style"),
-      hasBowling: decoded.includes("Bowling Style"),
+      hasBowlingSummary: decoded.includes("Bowling Career Summary"),
       hasTeams: decoded.includes("Teams"),
       hasName: decoded.includes("Tim Seifert"),
       hasBattingSummary: decoded.includes("Batting Career Summary"),
+      hasBattingForm: decoded.includes("Batting Form"),
       length: decoded.length,
     });
   } catch (err: any) {
