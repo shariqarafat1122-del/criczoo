@@ -856,6 +856,7 @@ export default function Squad() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<0 | 1>(0);
 
+  
  const fetchSquad = useCallback(async () => {
   if (!matchId) {
     setError("No match ID provided.");
@@ -897,6 +898,13 @@ export default function Squad() {
     }
 
     const matchInfo = match.match.matchInfo;
+
+    console.log({
+   team1Name: data.team1Name,
+  team2Name: data.team2Name,
+  team1Flag: data.team1Flag,
+  team2Flag: data.team2Flag,
+});
 
     setData({
       ...squad,
