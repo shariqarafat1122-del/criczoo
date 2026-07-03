@@ -1553,14 +1553,8 @@ export default function LiveScorePage() {
             <PageTabs active={pageTab} onChange={setPageTab} />
 
             
-               
-                
-                {pageTab === "live" && (
-              <>
-              <LiveMatch matchId={matchId} />
-              </>
-            )}
-
+           {pageTab === "live" && <LiveMatch/>}
+              
             {pageTab === "scorecard" && (
               <>
                 <InningsTabs innings={innings} active={activeInnings} onChange={setActiveInnings} />
@@ -1570,12 +1564,10 @@ export default function LiveScorePage() {
               </>
             )}
 
+            //Render Squad Page
+            {pageTab === "squad" && <Squad />}
+           
             
-                
-                
-            {pageTab === "squad" && (
-           <Squad matchId={matchId} />
-            )}
 
             {pageTab === "info" && (
               <>
