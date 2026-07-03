@@ -215,7 +215,7 @@ const bowlingCareer = {};
   profileId,
   name,
   country,
-  image,
+  image: playerImage,
   born,
   birthPlace,
   role,
