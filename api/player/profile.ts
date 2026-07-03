@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-
+import * as cheerio from "cheerio";
 function clean(text: string) {
   return text.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -32,6 +32,10 @@ const decoded = html
   .replace(/\\"/g, '"')
   .replace(/\\\\/g, "\\");
 
+
+    const $ = cheerio.load(decoded);
+
+     console.log($("body").text());
 // 👇 YAHAN RAKHO
 const born =
   decoded.match(/Born\s*([A-Za-z]+\s+\d{1,2},\s+\d{4}\s*\(\d+\s*years\))/)?.[1] ?? "";
