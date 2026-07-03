@@ -27,11 +27,17 @@ interface SquadAPIResponse {
   success: boolean;
   team1Name: string;
   team2Name: string;
+  
+  team1Flag: string;
+  team2Flag: string;
+
   seriesName?: string;
+  venue?: string;
   matchStatus?: string;
   matchDate?: string;
   matchTime?: string;
   matchFormat?: string;
+  matchDescription?: string;
   team1: Player[];
   team2: Player[];
 }
@@ -458,21 +464,6 @@ const EmptyView = () => (
     </div>
   </div>
 );
-
-/* ═══════════════════════════════════════════════════════════════════════
-   STICKY HEADER
-   ═══════════════════════════════════════════════════════════════════════ */
-
-const StickyHeader: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 8);
-    window.addEventListener("scroll", h, { passive: true });
-    return () => window.removeEventListener("scroll", h);
-  }, []);
-
-  return (
 
 /* ═══════════════════════════════════════════════════════════════════════
    TEAM TABS — segmented control with sliding indicator
