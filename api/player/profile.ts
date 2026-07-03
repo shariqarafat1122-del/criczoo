@@ -11,7 +11,7 @@ interface BattingFormEntry {
 interface Rankings {
   test: string;
   odi: string;
-  t20i: string | { current: string; best: string };
+  t20i: string;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -27,8 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept":
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
         "Referer": "https://www.cricbuzz.com/",
       },
@@ -40,13 +39,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(response.status).json({
         success: false,
         error: `Upstream returned ${response.status}`,
-        preview: html.slice(0, 300), // debug: see what Cricbuzz actually sent
+        preview: html.slice(0, 300),
       });
     }
 
-    // Only treat as not-found if the explicit Next.js not-found flag is present
-    // AND there's no valid player name in a script tag (avoids false positives
-    // from "Nothing to show" appearing in unrelated widgets on the same page).
     const hasNotFoundFlag = html.includes('"asNotFound":true');
     const hasPersonSchema = html.includes('"@type":"Person"');
 
@@ -55,10 +51,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         success: false,
         profileId,
         error: "Player profile not found",
-        preview: html.slice(0, 300), // debug: remove once confirmed working
       });
     }
 
+    // ---- JSON-LD extraction (primary, most reliable source) ----
     const ldJsonMatch = html.match(
       /<script type="application\/ld\+json">(\{.*?"mainEntity".*?\})<\/script>/s
     );
@@ -79,47 +75,61 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const person: any = ld?.mainEntity || {};
 
-    const grab = (key: string): string | null => {
-      const m = html.match(new RegExp(`"${key}"\\s*:\\s*"([^"]*)"`));
-      return m ? m[1].trim() : null;
-    };
+    const name: string | null = person.name || null;
+    const birthDate: string | null = person.birthDate || null;
+    const birthPlace: string | null = person.birthPlace || null;
+    const nationality: string | null = person.nationality || null;
+    const worksFor: string | null = person.worksFor || null;
 
-    const name = person.name || grab("name");
-    const birthDate = person.birthDate || grab("birthDate") || grab("born");
-    const birthPlace = person.birthPlace || grab("birthPlace");
-    const role = person.jobTitle || grab("role");
-    const nationality = person.nationality || grab("nationality");
-    const worksFor: string | null = person.worksFor || grab("worksFor");
+    // jobTitle in JSON-LD is always "Cricketer" — the real role (WK-Batsman etc.)
+    // is only in the plain-text "PERSONAL INFORMATION" block, so parse that directly.
+    // Pattern in raw text: "...RoleWK-BatsmanBatting StyleRight Handed BatTeams..."
+    const roleMatch = html.match(/\bRole([A-Za-z\-\/ ]+?)Batting Style/);
+    const role = roleMatch ? roleMatch[1].trim() : null;
 
-    const battingStyleMatch = html.match(/Batting Style([A-Za-z\s]+?)(?:Bowling Style|Teams)/);
-    const bowlingStyleMatch = html.match(/Bowling Style([A-Za-z\s]+?)(?:Teams|ICC)/);
+    // Batting Style sits directly between "Batting Style" and "Teams"
+    const battingStyleMatch = html.match(/Batting Style([A-Za-z ]+?)Teams/);
+    const battingStyle = battingStyleMatch ? battingStyleMatch[1].trim() : null;
 
+    // Bowling Style only exists for bowlers/all-rounders; sits between
+    // "Bowling Style" and either "Teams" or "ICC"
+    const bowlingStyleMatch = html.match(/Bowling Style([A-Za-z, ]+?)(?:Teams|ICC)/);
+    const bowlingStyle = bowlingStyleMatch ? bowlingStyleMatch[1].trim() : null;
+
+    // ---- Teams ----
     let teams: string[] = [];
     if (worksFor) {
       teams = worksFor.split(",").map((t: string) => t.trim()).filter(Boolean);
     } else {
-      const teamsBlockMatch = html.match(/Teams([A-Za-z0-9,\s]+?)(?:ICC RANKINGS|RECENT FORM)/);
+      const teamsBlockMatch = html.match(/\bTeams([A-Za-z0-9,\- ]+?)ICC RANKINGS/);
       if (teamsBlockMatch) {
         teams = teamsBlockMatch[1].split(",").map((t: string) => t.trim()).filter(Boolean);
       }
     }
 
+    // ---- ICC Rankings ----
+    // Raw pattern: "FormatCurrent RankBest RankTest----ODI----T20I126"
+    // i.e. Test, ODI have "-" for both current/best when unranked;
+    // T20I here shows "126" meaning current=1, best=26 concatenated (no separator).
+    // We can only reliably split when both values are single/double digit; otherwise
+    // report the raw captured string alongside a best-effort split.
     const rankingsBlockMatch = html.match(
-      /ICC RANKINGS(.*?)(?:SUMMARY|TEAMS\s|RECENT FORM)/s
+      /Best RankTest([\s\S]*?)SUMMARY/
     );
     const parseRankings = (block: string | undefined): Rankings | null => {
       if (!block) return null;
-      const testMatch = block.match(/Test(\S*?)(ODI|$)/);
-      const odiMatch = block.match(/ODI(\S*?)(T20I|$)/);
-      const t20Match = block.match(/T20I(\d*)(\d*)/);
+      const testMatch = block.match(/^(-+|\d+)ODI/);
+      const odiMatch = block.match(/ODI(-+|\d+)T20I/);
+      const t20Match = block.match(/T20I(-+|\d+)$/);
       return {
         test: testMatch ? testMatch[1] : "-",
         odi: odiMatch ? odiMatch[1] : "-",
-        t20i: t20Match ? { current: t20Match[1] || "-", best: t20Match[2] || "-" } : "-",
+        t20i: t20Match ? t20Match[1] : "-",
       };
     };
     const iccRankings = parseRankings(rankingsBlockMatch?.[1]);
 
+    // ---- Recent batting form ----
     const formMatches = [
       ...html.matchAll(/(\d+\(\d+\))([A-Z]+)(T20I?|ODI|TEST)(\d{4} \w{3} \d{2})/g),
     ];
@@ -130,6 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       date: m[4],
     }));
 
+    // ---- Career summary ----
     const summaryMatch = html.match(/"summary":"(.*?)","/);
     const careerSummary: string | null =
       person.description ||
@@ -137,6 +148,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? summaryMatch[1].replace(/\\"/g, '"').replace(/\\u2019/g, "'")
         : null);
 
+    // ---- Player image ----
     const imageIdMatch = html.match(/"imageId":(\d+)/);
     const playerImage = imageIdMatch
       ? `https://static.cricbuzz.com/a/img/v1/i1/c${imageIdMatch[1]}/i.jpg`
@@ -145,14 +157,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const cleanData = {
       success: true,
       profileId,
-      name: name || null,
-      country: nationality || null,
+      name,
+      country: nationality,
       playerImage,
-      born: birthDate || null,
-      birthPlace: birthPlace || null,
-      role: role || null,
-      battingStyle: battingStyleMatch ? battingStyleMatch[1].trim() : null,
-      bowlingStyle: bowlingStyleMatch ? bowlingStyleMatch[1].trim() : null,
+      born: birthDate,
+      birthPlace,
+      role,
+      battingStyle,
+      bowlingStyle,
       iccRankings,
       teams,
       battingForm,
