@@ -1,70 +1,85 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import * as cheerio from "cheerio";
-function clean(text: string) {
-  return text.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
-}
 
-function extractBetween(source: string, start: string, end: string) {
-  const s = source.indexOf(start);
-  if (s === -1) return "";
-  const from = s + start.length;
-  const e = end ? source.indexOf(end, from) : -1;
-  return clean(e === -1 ? source.substring(from) : source.substring(from, e));
-}
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  try {
-    const profileId = String(req.query.profileId || "").trim();
-    if (!profileId) return res.status(400).json({success:false,message:"profileId is required"});
-
-    const response = await fetch(`https://www.cricbuzz.com/profiles/${profileId}`,{
-      headers:{
-        "User-Agent":"Mozilla/5.0",
-        "Accept":"text/html"
-      }
-    });
-
-    const html = await response.text();
-
-const decoded = html
-  .replace(/\\u003c/g, "<")
-  .replace(/\\u003e/g, ">")
-  .replace(/\\"/g, '"')
-  .replace(/\\\\/g, "\\");
+const url = "https://www.cricbuzz.com/profiles/9443/tim-seifert";
 
 
-    const $ = cheerio.load(decoded);
+async function fetchPage(url: string): Promise<string> {
+  const res = await fetch(url, {
+    headers: HEADERS,
+    next: { revalidate: 3600 }, // Cache 1 hour on Vercel
+  });
 
-     console.log($("body").text());
-// 👇 YAHAN RAKHO
-const born =
-  decoded.match(/Born\s*([A-Za-z]+\s+\d{1,2},\s+\d{4}\s*\(\d+\s*years\))/)?.[1] ?? "";
-
-const birthPlace =
-  decoded.match(/Birth Place\s*([A-Za-z\s-]+?)(?=Role)/)?.[1]?.trim() ?? "";
-
-const role =
-  decoded.match(/Role\s*([A-Za-z-]+?)(?=Batting Style)/)?.[1]?.trim() ?? "";
-
-const battingStyle =
-  decoded.match(/Batting Style\s*(.*?)(?=Teams)/)?.[1]?.trim() ?? "";
-
-const teams =
-  decoded.match(/Teams\s*(.*?)(?=ICC Rankings|Career Summary|Summary|$)/is)?.[1]?.trim() ?? "";
-
-    const text = clean(decoded);
-
-    return res.status(200).json({
-      success:true,
-      profileId,
-      born: extractBetween(text,"Born","Birth Place"),
-      birthPlace: extractBetween(text,"Birth Place","Role"),
-      role: extractBetween(text,"Role","Batting Style"),
-      battingStyle: extractBetween(text,"Batting Style","ICC RANKINGS"),
-      teams: extractBetween(text,"Teams","Related Articles"),
-      summary: extractBetween(text,"SUMMARY","APPS")
-    });
-  } catch(err:any){
-    return res.status(500).json({success:false,error:err?.message});
+  if (!res.ok) {
+    throw new Error(`Cricbuzz returned ${res.status}`);
   }
+
+  return res.text();
+}
+
+/**
+ * Extract text content between two markers in HTML
+ */
+function between(html: string, start: string, end: string): string {
+  const s = html.indexOf(start);
+  if (s === -1) return "";
+  const e = html.indexOf(end, s + start.length);
+  if (e === -1) return html.slice(s + start.length);
+  return html.slice(s + start.length, e);
+}
+
+/**
+ * Strip HTML tags
+ */
+function stripTags(html: string): string {
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Extract player image URL from HTML
+ */
+function extractImage(html: string): string | null {
+  // Pattern: <img ... src="https://static.cricbuzz.com/a/img/v1/...
+  const imgMatch = html.match(
+    /src=["'](https:\/\/static\.cricbuzz\.com\/a\/img\/v1\/i1\/c\d+\/[^"']+)["']/
+  );
+  if (imgMatch) return imgMatch[1];
+
+  // Alternate pattern
+  const altMatch = html.match(
+    /src=["'](https:\/\/[^"']*cricbuzz[^"']*\/players\/[^"']+)["']/
+  );
+  return altMatch ? altMatch[1] : null;
+}
+
+/**
+ * Extract JSON-LD schema data from HTML
+ */
+function extractJsonLd(html: string): any[] {
+  const results: any[] = [];
+  const pattern =
+    /<script\s+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let match;
+
+  while ((match = pattern.exec(html)) !== null) {
+    try {
+      results.push(JSON.parse(match[1]));
+    } catch {
+      // Skip malformed JSON
+    }
+  }
+
+  return results;
 }
