@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import * as cheerio from "cheerio";
 
 export default async function handler(
   req: VercelRequest,
@@ -33,26 +34,29 @@ export default async function handler(
       .replace(/\\"/g, '"')
       .replace(/\\\\/g, "\\");
 
-    const personal = decoded.match(
-  /PERSONAL INFORMATION([\s\S]*?)ICC RANKINGS/i
-)?.[1] || "";
+";
 
-const born =
-  personal.match(/Born\s*([\s\S]*?)Birth Place/i)?.[1]?.trim() || "";
+// decoded HTML milne ke baad
+const decoded = decodeURIComponent(html);
 
-const birthPlace =
-  personal.match(/Birth Place\s*([\s\S]*?)Role/i)?.[1]?.trim() || "";
+// YAHAN
+const $ = cheerio.load(decoded);
 
-const role =
-  personal.match(/Role\s*([\s\S]*?)Batting Style/i)?.[1]?.trim() || "";
+const born = $("*:contains('Born')").next().text().trim();
 
-const battingStyle =
-  personal.match(/Batting Style\s*([\s\S]*?)Teams/i)?.[1]?.trim() || "";
+const birthPlace = $("*:contains('Birth Place')").next().text().trim();
 
-const teams =
-  personal.match(/Teams\s*([\s\S]*)/)?.[1]
-    ?.replace(/\s+/g, " ")
-    .trim() || "";
+const role = $("*:contains('Role')").next().text().trim();
+
+const battingStyle = $("*:contains('Batting Style')").next().text().trim();
+
+const teams = $("*:contains('Teams')")
+  .next()
+  .text()
+  .replace(/\s+/g, " ")
+  .trim();
+
+
 
        return res.status(200).json({
        success: true,
