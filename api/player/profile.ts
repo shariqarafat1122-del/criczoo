@@ -33,17 +33,11 @@ export default async function handler(
       .replace(/\\"/g, '"')
       .replace(/\\\\/g, "\\");
 
+    const start = dedcoded.indexOF("PERSONAL INFORMATION");
+    const batting = dedcoded.indexOF("Batting Style");
+    const bowling = dedcoded.indexOF("Bowling Career Summary");
+
     return res.status(200).json({
-      success: true,
-      hasPersonal: decoded.includes("PERSONAL INFORMATION"),
-      hasBorn: decoded.includes("Born"),
-      hasBatting: decoded.includes("Batting Style"),
-      hasBowlingSummary: decoded.includes("Bowling Career Summary"),
-      hasTeams: decoded.includes("Teams"),
-      hasName: decoded.includes("Tim Seifert"),
-      hasBattingSummary: decoded.includes("Batting Career Summary"),
-      hasBattingForm: decoded.includes("Batting Form"),
-      length: decoded.length,
     });
   } catch (err: any) {
     return res.status(500).json({
