@@ -49,21 +49,17 @@ const role =
 const battingStyle =
   personal.match(/Batting Style\s*([\s\S]*?)Teams/i)?.[1]?.trim() || "";
 
-const BowlingSummary =
-  personal.match(/Bowling Career Summary\s*([\s\S]*?)Bowling Career Summary/i)?.[1]?.trim() || "";
-
 const teams =
   personal.match(/Teams\s*([\s\S]*)/)?.[1]
     ?.replace(/\s+/g, " ")
     .trim() || "";
 
-       return res.status(200).send({
+       return res.status(200).json({
        success: true,
        born,
        birthPlace,
        role,
        battingStyle,
-       BowlingSummary,
        teams,
     });
 
