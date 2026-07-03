@@ -28,15 +28,9 @@ interface SquadAPIResponse {
   team1Name: string;
   team2Name: string;
   
-  team1Short: string;
-  team2Short: string;
-  
   team1Flag: string;
   team2Flag: string;
 
-  team1ImageId?: number | string;
-  team2ImageId?: number | string;
-  
   seriesName?: string;
   venue?: string;
   matchStatus?: string;
@@ -919,12 +913,6 @@ export default function Squad() {
 
       team1Name: matchInfo.team1.teamName,
       team2Name: matchInfo.team2.teamName,
-
-      team1Short: matchInfo.team1.teamSName,
-      team2Short: matchInfo.team2.teamSName,
-
-      team1ImageId: matchInfo.team1.imageId,
-      team2ImageId: matchInfo.team2.imageId,
 
       seriesName: matchInfo.seriesName,
       matchDesc: matchInfo.matchDesc,
