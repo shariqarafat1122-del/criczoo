@@ -870,59 +870,35 @@ export default function Squad() {
     setLoading(true);
     setError(null);
 
-    const [homeRes, squadRes] = await Promise.all([
-      fetch("/api/score/home", {
-        cache: "no-store",
-      }),
-      fetch(`/api/score/squad?matchId=${matchId}`, {
-        cache: "no-store",
-      }),
-    ]);
+    const squadRes = await fetch(
+  `/api/score/squad?matchId=${matchId}`,
+  {
+    cache: "no-store",
+  }
+);
 
-    if (!homeRes.ok) {
-      throw new Error("Failed to load home data.");
-    }
+if (!squadRes.ok) {
+  throw new Error("Failed to load squad.");
+}
 
-    if (!squadRes.ok) {
-      throw new Error("Failed to load squad.");
-    }
+const squad: SquadAPIResponse = await squadRes.json();
 
-    const home = await homeRes.json();
-    const squad: SquadAPIResponse = await squadRes.json();
+if (!squad.success) {
+  throw new Error("Squad data unavailable.");
+}
 
-    const match = home.matches.find(
-      (m: any) =>
-        Number(m.match.matchInfo.matchId) === Number(matchId)
-    );
-
-    if (!match) {
-      throw new Error("Match not found.");
-    }
-
-    const matchInfo = match.match.matchInfo;
-
-    console.log({
-   team1Name: data.team1Name,
-  team2Name: data.team2Name,
-  team1Flag: data.team1Flag,
-  team2Flag: data.team2Flag,
-});
+setData(squad);
 
     setData({
       ...squad,
 
       team1Name: matchInfo.team1.teamName,
       team2Name: matchInfo.team2.teamName,
-
       seriesName: matchInfo.seriesName,
       matchFormat: matchInfo.matchFormat,
-
       matchStatus: matchInfo.matchStatus,
-
       venue: matchInfo.venueInfo?.ground,
-      city: matchInfo.venueInfo?.city,
-
-      startDate: matchInfo.startDate,
+      matchTime: matchInfo.matchTime,
     });
   } catch (e) {
     setError(e instanceof Error ? e.message : "Failed to fetch squad.");
