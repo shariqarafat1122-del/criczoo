@@ -45,7 +45,7 @@ export default async function handler(
   tim: decoded.indexOf("Tim Seifert"),
   title: decoded.indexOf("<title>")
 });
-    });
+
   } catch (err: any) {
     return res.status(500).json({
       success: false,
