@@ -39,13 +39,10 @@ export default async function handler(
     // Team Flags
     // -------------------------
 
-    const flagRegex =
-      /<img[^>]+src="(https:\/\/static\.cricbuzz\.com\/a\/img\/v1\/25x18\/i1\/c\d+\/[^"]+)"/g;
+    const flagImgs = $("div.flex.justify-between.bg-cbInactTab img");
 
-    const flags = [...html.matchAll(flagRegex)].map((m) => m[1]);
-
-    const team1Flag = flags[0] || "";
-    const team2Flag = flags[1] || "";
+   const team1Flag = flagImgs.eq(0).attr("src") || "";
+   const team2Flag = flagImgs.eq(3).attr("src") || "";
 
   
 
