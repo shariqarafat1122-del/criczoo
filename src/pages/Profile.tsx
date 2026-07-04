@@ -918,6 +918,7 @@ function EmptyState({ onBack }: { onBack: () => void }) {
 
 export default function PlayerProfilePage() {
   const { profileId } = useParams<{ profileId: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<PlayerProfile | null>(null);
   const [status, setStatus] = useState<
@@ -936,7 +937,7 @@ export default function PlayerProfilePage() {
     if (!profileId) return;
     setStatus("loading");
     try {
-      const res = await fetch(`/api/player/profile?profileId=${profileId}`);
+      const res = await fetch(`/api/player/profile?profileId=${profileId}/${slug}`);
       console.log(profileId);
       
       if (res.status === 404) {
