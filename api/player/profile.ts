@@ -1,14 +1,3 @@
-// api/player.ts
-// Vercel Serverless Function (TypeScript)
-// Usage: GET /api/player?url=https://<site>/profiles/12345/player-name
-//
-// Works generically across sites by layering strategies:
-// 1. __NEXT_DATA__ (Next.js apps) — cleanest source if present.
-// 2. Common site-specific patterns (e.g. Cricbuzz-style class names) — best-effort.
-// 3. Generic label-based heuristics (looks for "Born", "Role", "Batting", "Bowling",
-//    "Teams", stat tables, etc. anywhere in the DOM) — works on unknown markup.
-//
-// You can also hardcode a URL below instead of passing ?url=.
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import * as cheerio from "cheerio";
@@ -28,16 +17,18 @@ interface PlayerProfile {
   [key: string]: unknown;
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
+export default async function handler( req: VercelRequest, res: VercelResponse): 
+  Promise<void> {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
 
+const { profileId } = req.body;
+  
   // 👇 Yahan apna URL daalo agar file ke andar hardcode karna hai.
   // Agar khaali ("") rakhoge, to ?url= query param se le lega.
-  const HARDCODED_URL: string = "https://www.cricbuzz.com/profiles/9428/shreyas-iyer";
+
+  
+  const HARDCODED_URL: string = `https://www.cricbuzz.com/profiles/${profileId}`;
 
   const targetUrl: string | undefined =
     HARDCODED_URL || (req.query.url as string | undefined);
@@ -102,8 +93,6 @@ export default async function handler(
 
     res.status(200).json({
       success: true,
-      method: "html-scrape",
-      source: targetUrl,
       player: profile,
     });
   } catch (err) {
