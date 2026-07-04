@@ -444,7 +444,7 @@ const CricketSchedule: React.FC = () => {
 
         {/* Footer */}
         <div className="mt-6 text-center text-xs text-gray-400 pb-4">
-          <p>Powered by Cricbuzz API</p>
+          <p>Powered by CricZoo</p>
         </div>
       </div>
     </div>
