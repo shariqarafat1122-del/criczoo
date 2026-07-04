@@ -1,13 +1,4 @@
-// api/scrape.ts
-// Vercel Serverless Function (TypeScript)
-// Usage: GET /api/scrape?url=https://example.com/matches
-//
-// Strategy:
-// 1. Fetch the target URL's HTML.
-// 2. If it's a Next.js page, pull out the embedded __NEXT_DATA__ JSON
-//    (this is usually the cleanest, most complete source of truth).
-// 3. Otherwise, fall back to generic HTML parsing with cheerio to find
-//    "match card"-like repeating blocks and extract text/labels/images.
+
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import * as cheerio from "cheerio";
@@ -25,33 +16,11 @@ interface HtmlMatchResult {
   images: string[];
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Content-Type", "application/json");
 
-  // 👇 Yahan apna URL daalo agar file ke andar hardcode karna hai.
-  // Agar ye khaali ("") rakhoge, to ?url= query param se le lega.
-  const HARDCODED_URL: string = "https://criczoo.vercel.app";
 
-  const targetUrl: string | undefined =
-    HARDCODED_URL || (req.query.url as string | undefined);
+  const parsedUrl = "https://cricbuzz.com/profile/9443/tim-seifert";
 
-  if (!targetUrl) {
-    res.status(400).json({ error: "Missing url. Set HARDCODED_URL in file or pass ?url=" });
-    return;
-  }
-
-  let parsedUrl: URL;
-  try {
-    parsedUrl = new URL(targetUrl);
-  } catch (e) {
-    res.status(400).json({ error: "Invalid url" });
-    return;
-  }
-
+  
   try {
     const response = await fetch(parsedUrl.toString(), {
       headers: {
