@@ -484,7 +484,7 @@ function buildDaysFromRawSchedule(raw: RawScheduleData): DayInfo[] {
  * excluded from the Vercel deployment bundle. Never throws; returns an
  * empty string if the embedded constant is somehow empty or unavailable.
  */
-async function readScheduleHtml(): Promise<string> {
+   function readScheduleHtml(): string {
   try {
     const response = await fetch(
       "https://www.cricbuzz.com/cricket-schedule/upcoming-series/all",
@@ -534,9 +534,9 @@ function parseScheduleHtml(html: string): DayInfo[] {
 /*  Vercel Serverless Function handler                                      */
 /* ------------------------------------------------------------------------ */
 
-export default async function handler(req: VercelRequest, res: VercelResponse): void {
+export default function handler(req: VercelRequest, res: VercelResponse): void {
   try {
-    const html = await readScheduleHtml();
+    const html = readScheduleHtml();
 
     if (!html) {
       const errorResponse: ApiResponse = {
