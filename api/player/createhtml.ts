@@ -536,7 +536,7 @@ function parseScheduleHtml(html: string): DayInfo[] {
 
 export default function handler(req: VercelRequest, res: VercelResponse): void {
   try {
-    const html = readScheduleHtml();
+    const html = await readScheduleHtml();
 
     if (!html) {
       const errorResponse: ApiResponse = {
