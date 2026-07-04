@@ -1,26 +1,63 @@
-
+// api/player.ts
+// Vercel Serverless Function (TypeScript)
+// Usage: GET /api/player?url=https://<site>/profiles/12345/player-name
+//
+// Works generically across sites by layering strategies:
+// 1. __NEXT_DATA__ (Next.js apps) — cleanest source if present.
+// 2. Common site-specific patterns (e.g. Cricbuzz-style class names) — best-effort.
+// 3. Generic label-based heuristics (looks for "Born", "Role", "Batting", "Bowling",
+//    "Teams", stat tables, etc. anywhere in the DOM) — works on unknown markup.
+//
+// You can also hardcode a URL below instead of passing ?url=.
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
 
-interface MatchResult {
+interface PlayerProfile {
+  name: string;
+  image: string;
+  role: string;
+  battingStyle: string;
+  bowlingStyle: string;
+  born: string;
+  birthPlace: string;
+  teams: string[];
+  stats: Record<string, Record<string, string>>; // e.g. { batting: { Test: "...", ODI: "..." } }
+  bio: string;
   [key: string]: unknown;
 }
 
-interface HtmlMatchResult {
-  rawText: string;
-  teamAGuess: string | null;
-  teamBGuess: string | null;
-  badges: string[];
-  images: string[];
-}
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+): Promise<void> {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Content-Type", "application/json");
 
+  // 👇 Yahan apna URL daalo agar file ke andar hardcode karna hai.
+  // Agar khaali ("") rakhoge, to ?url= query param se le lega.
+  const HARDCODED_URL: string = "https://cricbuzz.com/profile/9443/tim-seifert";
 
+  const targetUrl: string | undefined =
+    HARDCODED_URL || (req.query.url as string | undefined);
 
-  const parsedUrl = "https://cricbuzz.com/profile/9443/tim-seifert";
+  if (!targetUrl) {
+    res.status(400).json({
+      success: false,
+      message: "Missing url. Set HARDCODED_URL in file or pass ?url=",
+    });
+    return;
+  }
 
-  
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(targetUrl);
+  } catch (e) {
+    res.status(400).json({ success: false, message: "Invalid url" });
+    return;
+  }
+
   try {
     const response = await fetch(parsedUrl.toString(), {
       headers: {
@@ -31,8 +68,9 @@ interface HtmlMatchResult {
     });
 
     if (!response.ok) {
-      res.status(502).json({
-        error: `Upstream fetch failed with status ${response.status}`,
+      res.status(response.status).json({
+        success: false,
+        message: `Failed to fetch page (status ${response.status})`,
       });
       return;
     }
@@ -40,196 +78,255 @@ interface HtmlMatchResult {
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // ---------- 1. Try __NEXT_DATA__ (Next.js apps) ----------
+    // ---------- 1. Try __NEXT_DATA__ ----------
     const nextDataScript = $("#__NEXT_DATA__").html();
     if (nextDataScript) {
       try {
         const nextData: unknown = JSON.parse(nextDataScript);
-        const matches = extractMatchesFromNextData(nextData);
-        res.status(200).json({
-          source: targetUrl,
-          method: "next-data",
-          matchesFound: matches.length,
-          matches,
-          raw: safeTruncate(nextData),
-        });
-        return;
+        const profile = extractPlayerFromNextData(nextData);
+        if (profile && Object.keys(profile).length > 0) {
+          res.status(200).json({
+            success: true,
+            method: "next-data",
+            source: targetUrl,
+            player: profile,
+          });
+          return;
+        }
       } catch (e) {
-        // fall through to HTML scraping if JSON parse fails
+        // fall through
       }
     }
 
-    // ---------- 2. Generic HTML scraping fallback ----------
-    const matches = extractMatchesFromHtml($);
+    // ---------- 2 & 3. HTML heuristics (site-pattern + generic) ----------
+    const profile = extractPlayerFromHtml($);
 
     res.status(200).json({
-      source: targetUrl,
+      success: true,
       method: "html-scrape",
-      matchesFound: matches.length,
-      matches,
+      source: targetUrl,
+      player: profile,
     });
   } catch (err) {
     const error = err as Error;
-    res.status(500).json({ error: "Scrape failed", details: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 }
 
 // -----------------------------------------------------------------
-// Recursively search parsed __NEXT_DATA__ for arrays of objects that
-// "look like" cricket matches (has team-ish and score-ish fields).
+// Strategy 1: __NEXT_DATA__ — recursively find an object that looks
+// like a player profile (has name + role/batting/bowling-ish keys).
 // -----------------------------------------------------------------
-function extractMatchesFromNextData(nextData: unknown): MatchResult[] {
-  const found: MatchResult[] = [];
-  const seen = new Set<string>();
+function extractPlayerFromNextData(nextData: unknown): Partial<PlayerProfile> | null {
+  let bestMatch: Record<string, unknown> | null = null;
 
-  const looksLikeMatch = (obj: unknown): obj is Record<string, unknown> => {
+  const looksLikePlayer = (obj: unknown): obj is Record<string, unknown> => {
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false;
     const keys = Object.keys(obj as Record<string, unknown>)
       .join(",")
       .toLowerCase();
-    const hasTeams =
-      keys.includes("team") || keys.includes("home") || keys.includes("away");
-    const hasMatchish =
-      keys.includes("score") ||
-      keys.includes("status") ||
-      keys.includes("series") ||
-      keys.includes("venue") ||
-      keys.includes("match");
-    return hasTeams && hasMatchish;
+    const hasName = keys.includes("name") || keys.includes("fullname");
+    const hasPlayerish =
+      keys.includes("battingstyle") ||
+      keys.includes("bowlingstyle") ||
+      keys.includes("role") ||
+      keys.includes("dateofbirth") ||
+      keys.includes("birthplace") ||
+      keys.includes("intlteam");
+    return hasName && hasPlayerish;
   };
 
   const visit = (node: unknown, depth: number): void => {
-    if (!node || typeof node !== "object" || depth > 12) return;
+    if (!node || typeof node !== "object" || depth > 14 || bestMatch) return;
 
     if (Array.isArray(node)) {
-      const candidateItems = node.filter(looksLikeMatch);
-      if (candidateItems.length >= 1) {
-        for (const item of candidateItems) {
-          const key = JSON.stringify(item).slice(0, 200);
-          if (!seen.has(key)) {
-            seen.add(key);
-            found.push(normalizeMatchObject(item));
-          }
+      for (const item of node) {
+        if (looksLikePlayer(item)) {
+          bestMatch = item;
+          return;
         }
+        visit(item, depth + 1);
+        if (bestMatch) return;
       }
-      node.forEach((child: unknown) => visit(child, depth + 1));
       return;
     }
 
     const obj = node as Record<string, unknown>;
+    if (looksLikePlayer(obj)) {
+      bestMatch = obj;
+      return;
+    }
     for (const k of Object.keys(obj)) {
       visit(obj[k], depth + 1);
+      if (bestMatch) return;
     }
   };
 
   visit(nextData, 0);
-  return found;
+  if (!bestMatch) return null;
+
+  return flattenPlayerObject(bestMatch);
 }
 
-// Normalize an arbitrary match-shaped object into a consistent, flat shape.
-function normalizeMatchObject(obj: Record<string, unknown>): MatchResult {
-  const flat = flattenSimpleValues(obj);
+function flattenPlayerObject(obj: Record<string, unknown>): Partial<PlayerProfile> {
+  const get = (keys: string[]): string => {
+    for (const k of Object.keys(obj)) {
+      if (keys.includes(k.toLowerCase())) {
+        const v = obj[k];
+        if (typeof v === "string" || typeof v === "number") return String(v);
+      }
+    }
+    return "";
+  };
+
   return {
-    ...flat,
+    name: get(["name", "fullname", "playername"]),
+    role: get(["role", "playingrole"]),
+    battingStyle: get(["battingstyle"]),
+    bowlingStyle: get(["bowlingstyle"]),
+    born: get(["dateofbirth", "born", "birthdate"]),
+    birthPlace: get(["birthplace", "birthplacename"]),
+    image: get(["image", "imageurl", "faceimageid"]),
     _raw: obj,
   };
 }
 
-// Pulls out string/number leaf values one level deep + common nested paths.
-function flattenSimpleValues(
-  obj: Record<string, unknown>
-): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (value === null || value === undefined) continue;
-    if (
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "boolean"
-    ) {
-      result[key] = value;
-    } else if (typeof value === "object" && !Array.isArray(value)) {
-      const nested = value as Record<string, unknown>;
-      for (const [k2, v2] of Object.entries(nested)) {
-        if (
-          typeof v2 === "string" ||
-          typeof v2 === "number" ||
-          typeof v2 === "boolean"
-        ) {
-          result[`${key}_${k2}`] = v2;
-        }
+// -----------------------------------------------------------------
+// Strategy 2 & 3: HTML — try known site patterns first, then
+// fall back to generic label scanning (works on unfamiliar markup).
+// -----------------------------------------------------------------
+function extractPlayerFromHtml($: CheerioAPI): PlayerProfile {
+  const profile: PlayerProfile = {
+    name: "",
+    image: "",
+    role: "",
+    battingStyle: "",
+    bowlingStyle: "",
+    born: "",
+    birthPlace: "",
+    teams: [],
+    stats: {},
+    bio: "",
+  };
+
+  // --- Name: try <h1> first (works on most sites incl. Cricbuzz/ESPN) ---
+  profile.name =
+    $("h1").first().text().trim() ||
+    $('[class*="player-name" i], [class*="playerName" i]').first().text().trim() ||
+    $("title").text().split("|")[0].trim();
+
+  // --- Image: first reasonably large image near the top of the page ---
+  const heroImg = $('img[class*="player" i], img[class*="profile" i], img[class*="avatar" i]')
+    .first()
+    .attr("src");
+  profile.image = heroImg || $("img").first().attr("src") || "";
+
+  // --- Generic label scanner: find "Label: Value" or "Label \n Value" pairs ---
+  const labelMap: Record<string, keyof PlayerProfile> = {
+    role: "role",
+    "playing role": "role",
+    batting: "battingStyle",
+    "batting style": "battingStyle",
+    bowling: "bowlingStyle",
+    "bowling style": "bowlingStyle",
+    born: "born",
+    "date of birth": "born",
+    birthplace: "birthPlace",
+    "birth place": "birthPlace",
+  };
+
+  $("*").each((_: number, el: any) => {
+    const $el = $(el);
+    const ownText = $el
+      .clone()
+      .children()
+      .remove()
+      .end()
+      .text()
+      .trim()
+      .toLowerCase()
+      .replace(/:$/, "");
+
+    if (ownText && labelMap[ownText]) {
+      const field = labelMap[ownText];
+      if (profile[field]) return; // already found, keep first match
+
+      // value is usually the next sibling or parent's next sibling text
+      const candidate =
+        $el.next().text().trim() ||
+        $el.parent().next().text().trim() ||
+        $el.parent().text().replace($el.text(), "").trim();
+
+      if (candidate && candidate.length < 200) {
+        (profile[field] as string) = candidate;
       }
     }
-  }
-  return result;
-}
-
-function safeTruncate(obj: unknown): unknown {
-  try {
-    const str = JSON.stringify(obj);
-    if (str.length <= 200000) return obj;
-    return { _truncated: true, _note: "raw payload too large, omitted" };
-  } catch (e) {
-    return { _note: "unable to serialize raw payload" };
-  }
-}
-
-// -----------------------------------------------------------------
-// Generic HTML fallback: look for repeating "card"-like blocks and
-// pull out team names, scores, status badges, venue/date text.
-// -----------------------------------------------------------------
-function extractMatchesFromHtml($: CheerioAPI): HtmlMatchResult[] {
-  const matches: HtmlMatchResult[] = [];
-
-  const cardSelector =
-    '[class*="card" i], [class*="match" i], [class*="fixture" i]';
-
-  const candidates = $(cardSelector).filter((_: number, el: any) => {
-    const text = $(el).text().trim();
-    return /\bvs\b/i.test(text) && text.length < 2000;
   });
 
-  const topLevel = candidates.filter((_i: number, el: any) => {
-    const $el = $(el);
-    return (
-      $el
-        .parents(cardSelector)
-        .filter((_p: number, p: any) => candidates.is(p)).length === 0
-    );
-  });
+  // --- Teams: links that look like team pages, deduped ---
+  const teamTexts = $('a[href*="team" i], a[href*="/teams/" i]')
+    .map((_: number, el: any) => $(el).text().trim())
+    .get()
+    .filter((t: string) => t && t.length < 40);
+  profile.teams = [...new Set(teamTexts)].slice(0, 10);
 
-  topLevel.each((_: number, el: any) => {
-    const $el = $(el);
-
-    const images: string[] = $el
-      .find("img")
-      .map((_i: number, img: any) => {
-        const $img = $(img);
-        return $img.attr("src") || $img.attr("data-src") || null;
-      })
+  // --- Stats tables: any <table> with header row + data rows ---
+  $("table").each((_: number, table: any) => {
+    const $table = $(table);
+    const headers = $table
+      .find("th")
+      .map((_i: number, th: any) => $(th).text().trim())
       .get()
-      .filter((src: string | null): src is string => Boolean(src));
+      .filter(Boolean);
 
-    const badgeLike: string[] = $el
-      .find(
-        '[class*="badge" i], [class*="tag" i], [class*="pill" i], [class*="status" i]'
-      )
-      .map((_i: number, b: any) => $(b).text().trim())
-      .get()
-      .filter((b: string): boolean => Boolean(b));
+    if (!headers.length) return;
 
-    const fullText = $el.text().replace(/\s+/g, " ").trim();
+    // Try to name this table using nearby heading text
+    const nearbyHeading =
+      $table.prevAll("h2, h3, h4").first().text().trim() ||
+      $table.closest("div").prevAll("h2, h3, h4").first().text().trim() ||
+      `table_${Object.keys(profile.stats).length + 1}`;
 
-    const vsMatch = fullText.match(/(.{1,60})\bvs\b(.{1,60})/i);
-
-    matches.push({
-      rawText: fullText.slice(0, 500),
-      teamAGuess: vsMatch ? vsMatch[1].trim() : null,
-      teamBGuess: vsMatch ? vsMatch[2].trim() : null,
-      badges: [...new Set(badgeLike)],
-      images,
+    const rows: Record<string, string>[] = [];
+    $table.find("tbody tr").each((_i: number, tr: any) => {
+      const cells = $(tr)
+        .find("td")
+        .map((_j: number, td: any) => $(td).text().trim())
+        .get();
+      if (!cells.length) return;
+      const row: Record<string, string> = {};
+      headers.forEach((h: string, idx: number) => {
+        row[h] = cells[idx] ?? "";
+      });
+      rows.push(row);
     });
+
+    if (rows.length) {
+      // Flatten into { format: firstRowSummary } style for quick reading,
+      // plus keep raw rows under a "_rows" key.
+      const flatSummary: Record<string, string> = {};
+      rows.forEach((row: Record<string, string>, idx: number) => {
+        const label = row[headers[0]] || `row_${idx + 1}`;
+        flatSummary[label] = Object.entries(row)
+          .slice(1)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ");
+      });
+      profile.stats[nearbyHeading || `table_${idx_fallback(profile)}`] = flatSummary;
+    }
   });
 
-  return matches;
+  // --- Bio: longest paragraph on the page (rough heuristic) ---
+  let longest = "";
+  $("p").each((_: number, p: any) => {
+    const text = $(p).text().trim();
+    if (text.length > longest.length) longest = text;
+  });
+  profile.bio = longest.slice(0, 1000);
+
+  return profile;
 }
+
+function idx_fallback(profile: PlayerProfile): number {
+  return Object.keys(profile.stats).length + 1;
+    }
