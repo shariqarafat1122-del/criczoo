@@ -130,6 +130,10 @@ export default async function handler( req: VercelRequest, res: VercelResponse
 // Helpers to parse Cricbuzz-style strings into typed fields
 // -----------------------------------------------------------------
 
+
+
+
+
 function parseRankString(str: string): RankingEntry {
   const currentMatch = str.match(/Current Rank:\s*([^,]+)/i);
   const bestMatch = str.match(/Best Rank:\s*([^,]+)/i);
@@ -176,6 +180,42 @@ function buildFormatStats(
   };
 }
 
+
+function extractCountry($: CheerioAPI): string {
+  const countryFromTeam = $('a[href*="/cricket-team/" i], a[href*="/teams/" i]')
+    .filter((_: number, el: any) => {
+      const text = $(el).text().trim();
+      return text.length > 0 && text.length < 30;
+    })
+    .first()
+    .text()
+    .trim();
+
+  if (countryFromTeam) return countryFromTeam;
+
+  let country = "";
+  $("*").each((_: number, el: any) => {
+    if (country) return;
+    const $el = $(el);
+    const ownText = $el
+      .clone()
+      .children()
+      .remove()
+      .end()
+      .text()
+      .trim()
+      .toLowerCase()
+      .replace(/:$/, "");
+    if (ownText === "country" || ownText === "intl team") {
+      const candidate =
+        $el.next().text().trim() || $el.parent().next().text().trim();
+      if (candidate && candidate.length < 40) country = candidate;
+    }
+  });
+
+  return country;
+}
+  
 // -----------------------------------------------------------------
 // Main HTML extraction — returns data already shaped for the frontend
 // -----------------------------------------------------------------
