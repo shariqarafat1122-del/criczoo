@@ -281,37 +281,62 @@ function extractPlayerFromHtml(
     .filter((t: string) => t && t.length < 40 && t.toLowerCase() !== "teams");
   const teams = [...new Set(teamTexts)].slice(0, 10);
 
-  // --- ICC Rankings & career tables from <table> elements ---
+ // --- ICC Rankings & career tables ---
   const rankingStrings: Record<string, string> = {};
   let battingTable: Record<string, string> = {};
 
   $("table").each((_: number, table: any) => {
     const $table = $(table);
-    const headers = $table
+    let headers = $table
       .find("th")
       .map((_i: number, th: any) => $(th).text().trim())
       .get()
       .filter(Boolean);
 
-    if (!headers.length) return;
-
     const nearbyHeading =
       $table.prevAll("h2, h3, h4").first().text().trim() ||
       $table.closest("div").prevAll("h2, h3, h4").first().text().trim();
 
-    const rows: Record<string, string>[] = [];
-    $table.find("tbody tr").each((_i: number, tr: any) => {
-      const cells = $(tr)
+    let rows: Record<string, string>[] = [];
+
+    if (headers.length) {
+      $table.find("tbody tr").each((_i: number, tr: any) => {
+        const cells = $(tr)
+          .find("td")
+          .map((_j: number, td: any) => $(td).text().trim())
+          .get();
+        if (!cells.length) return;
+        const row: Record<string, string> = {};
+        headers.forEach((h: string, idx: number) => {
+          row[h] = cells[idx] ?? "";
+        });
+        rows.push(row);
+      });
+    } else {
+      // No <th> — first row's <td> values become the header labels
+      const trs = $table.find("tbody tr").toArray();
+      if (!trs.length) return;
+
+      const firstRowCells = $(trs[0])
         .find("td")
         .map((_j: number, td: any) => $(td).text().trim())
         .get();
-      if (!cells.length) return;
-      const row: Record<string, string> = {};
-      headers.forEach((h: string, idx: number) => {
-        row[h] = cells[idx] ?? "";
+
+      headers = firstRowCells.map((_v: string, i: number) => `col_${i}`);
+
+      trs.forEach((tr: any) => {
+        const cells = $(tr)
+          .find("td")
+          .map((_j: number, td: any) => $(td).text().trim())
+          .get();
+        if (!cells.length) return;
+        const row: Record<string, string> = {};
+        cells.forEach((c: string, idx: number) => {
+          row[`col_${idx}`] = c;
+        });
+        rows.push(row);
       });
-      rows.push(row);
-    });
+    }
 
     if (!rows.length) return;
 
@@ -327,7 +352,6 @@ function extractPlayerFromHtml(
     if (/rank/i.test(nearbyHeading)) {
       Object.assign(rankingStrings, flatSummary);
     } else if (!Object.keys(battingTable).length) {
-      // first non-ranking table assumed to be the batting stats table
       battingTable = flatSummary;
     }
   });
