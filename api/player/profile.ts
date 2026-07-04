@@ -22,7 +22,7 @@ export default async function handler( req: VercelRequest, res: VercelResponse):
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
 
-const { profileId } = req.body;
+const { profileId } = req.query;
   
   // 👇 Yahan apna URL daalo agar file ke andar hardcode karna hai.
   // Agar khaali ("") rakhoge, to ?url= query param se le lega.
