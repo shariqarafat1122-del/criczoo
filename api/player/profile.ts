@@ -183,12 +183,16 @@ function extractPlayerFromHtml(
   $: CheerioAPI,
   profileId: string
 ): PlayerProfileResponse {
+ 
   // --- Name ---
   const rawName =
     $("h1").first().text().trim() ||
     $('[class*="player-name" i], [class*="playerName" i]').first().text().trim() ||
     $("title").text().split("|")[0].trim();
-  const name = rawName.split(" - ")[0].trim();
+    const name = rawName
+    .split(" - ")[0]
+    .replace(/\s*profile\s*$/i, "")
+    .trim();
 
   // --- Image ---
   const heroImg = $(
@@ -329,7 +333,7 @@ function extractPlayerFromHtml(
     success: true,
     profileId,
     name: name || "",
-    country: fields.birthPlace || "",
+    country: extractCountry($) || fields.birthPlace || "",
     playerImage,
     born: fields.born || "",
     birthPlace: fields.birthPlace || "",
