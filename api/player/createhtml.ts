@@ -575,28 +575,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.status(200).json(errorResponse);
   }
 }
-
-    const days = parseScheduleHtml(html);
-    const totalMatches = days.reduce((sum, day) => sum + day.totalMatches, 0);
-
-    const response: ApiResponse = {
-      success: true,
-      generatedAt: new Date().toISOString(),
-      totalDays: days.length,
-      totalMatches,
-      days,
-    };
-
-    res.status(200).json(response);
-  } catch (error) {
-    const errorResponse: ApiResponse = {
-      success: false,
-      generatedAt: new Date().toISOString(),
-      totalDays: 0,
-      totalMatches: 0,
-      days: [],
-      error: error instanceof Error ? error.message : 'Unknown error while parsing schedule.',
-    };
-    res.status(200).json(errorResponse);
-  }
-}
