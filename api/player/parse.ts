@@ -11,10 +11,7 @@ export default async function handler(
   const url = req.query.url as string | undefined;
 
   if (!url) {
-    res.status(400).json({
-      success: false,
-      message: "Missing url. Pass ?url=https://example.com/page",
-    });
+    res.status(400).json({ success: false, message: "Missing url. Pass ?url=" });
     return;
   }
 
@@ -46,51 +43,79 @@ export default async function handler(
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // ---------- Try __NEXT_DATA__ first (raw JSON already embedded in page) ----------
+    // 1. Try embedded JSON first (works for Next.js-style sites)
     const nextDataScript = $("#__NEXT_DATA__").html();
     if (nextDataScript) {
       try {
-        const nextData: unknown = JSON.parse(nextDataScript);
-        res.status(200).json({
-          success: true,
-          source: "next-data",
-          url: parsedUrl.toString(),
-          data: nextData,
-        });
+        res.status(200).json({ success: true, source: "next-data", url: parsedUrl.toString(), data: JSON.parse(nextDataScript) });
         return;
-      } catch (e) {
-        // fall through to other strategies
-      }
+      } catch (e) {}
     }
 
-    // ---------- Try any other embedded JSON <script> blocks ----------
     const jsonScripts: unknown[] = [];
     $('script[type="application/json"]').each((_: number, el: any) => {
       const raw = $(el).html();
       if (!raw) return;
-      try {
-        jsonScripts.push(JSON.parse(raw));
-      } catch (e) {
-        // skip invalid JSON
-      }
+      try { jsonScripts.push(JSON.parse(raw)); } catch (e) {}
     });
-
     if (jsonScripts.length) {
-      res.status(200).json({
-        success: true,
-        source: "embedded-json-scripts",
-        url: parsedUrl.toString(),
-        data: jsonScripts.length === 1 ? jsonScripts[0] : jsonScripts,
-      });
+      res.status(200).json({ success: true, source: "embedded-json-scripts", url: parsedUrl.toString(), data: jsonScripts.length === 1 ? jsonScripts[0] : jsonScripts });
       return;
     }
 
-    // ---------- Fallback: no structured JSON found on page ----------
+    // 2. Fallback: build raw JSON from plain HTML (no embedded JSON on page)
+    const data: Record<string, unknown> = {};
+
+    data.title = $("title").text().trim();
+    data.h1 = $("h1").first().text().trim();
+
+    data.headings = $("h2, h3")
+      .map((_: number, el: any) => $(el).text().trim())
+      .get()
+      .filter(Boolean);
+
+    data.paragraphs = $("p")
+      .map((_: number, el: any) => $(el).text().trim())
+      .get()
+      .filter((t: string) => t.length > 0);
+
+    data.images = $("img")
+      .map((_: number, el: any) => ({
+        src: $(el).attr("src") || $(el).attr("srcset") || "",
+        alt: $(el).attr("alt") || "",
+      }))
+      .get()
+      .filter((img: { src: string }) => img.src);
+
+    data.links = $("a[href]")
+      .map((_: number, el: any) => ({
+        text: $(el).text().trim(),
+        href: $(el).attr("href"),
+      }))
+      .get()
+      .filter((l: { text: string }) => l.text.length > 0)
+      .slice(0, 200);
+
+    data.tables = $("table")
+      .map((_: number, table: any) => {
+        const $table = $(table);
+        const headers = $table.find("th").map((_i: number, th: any) => $(th).text().trim()).get();
+        const rows = $table
+          .find("tbody tr")
+          .map((_i: number, tr: any) =>
+            $(tr).find("td").map((_j: number, td: any) => $(td).text().trim()).get()
+          )
+          .get();
+        return { headers, rows };
+      })
+      .get()
+      .filter((t: any) => t.rows.length > 0);
+
     res.status(200).json({
-      success: false,
-      source: "none",
+      success: true,
+      source: "html-scrape",
       url: parsedUrl.toString(),
-      message: "No embedded JSON found on this page.",
+      data,
     });
   } catch (err) {
     const error = err as Error;
