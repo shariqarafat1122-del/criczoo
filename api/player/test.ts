@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as cheerio from 'cheerio';
-import { SCHEDULE_HTML } from '../schedulehtml.ts';
+import { SCHEDULE_HTML } from '../schedulehtml';
 
 /* ------------------------------------------------------------------------ */
 /*  Interfaces                                                               */
