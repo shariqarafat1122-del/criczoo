@@ -34,7 +34,7 @@ export default async function handler(
 
   // 👇 Yahan apna URL daalo agar file ke andar hardcode karna hai.
   // Agar ye khaali ("") rakhoge, to ?url= query param se le lega.
-  const HARDCODED_URL: string = "https://cricbuzz.com/profile/9443/tim-seifert";
+  const HARDCODED_URL: string = "https://criczoo.vercel.app";
 
   const targetUrl: string | undefined =
     HARDCODED_URL || (req.query.url as string | undefined);
