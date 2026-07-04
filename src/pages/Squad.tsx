@@ -1,5 +1,3 @@
-
-
 import React, {
   useEffect,
   useState,
@@ -21,16 +19,16 @@ interface Player {
   keeper?: boolean;
   image?: string;
   playingXI?: boolean;
+  substitute?: boolean;
+  isBench?: boolean;
 }
 
 interface SquadAPIResponse {
   success: boolean;
   team1Name: string;
   team2Name: string;
-  
   team1Flag: string;
   team2Flag: string;
-
   seriesName?: string;
   venue?: string;
   matchStatus?: string;
@@ -51,13 +49,8 @@ const cx = (...c: (string | false | undefined | null)[]) =>
 
 const initials = (name?: string) => {
   const safeName = (name ?? "").trim();
-
-  if (!safeName) {
-    return "?";
-  }
-
+  if (!safeName) return "?";
   const parts = safeName.split(/\s+/);
-
   return parts.length >= 2
     ? (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
     : safeName.slice(0, 2).toUpperCase();
@@ -91,157 +84,70 @@ const roleEmoji = (r?: string) => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ICONS — inline SVG, zero dependency
+   SPLIT XI vs BENCH — safe & flexible
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const splitSquad = (players: Player[]) => {
+  if (!players?.length) return { xi: [] as Player[], bench: [] as Player[] };
+
+  // Priority 1: explicit playingXI flag on ANY player
+  const hasXIFlag = players.some((p) => typeof p.playingXI === "boolean");
+  if (hasXIFlag) {
+    const xi = players.filter((p) => p.playingXI === true);
+    const bench = players.filter((p) => p.playingXI === false);
+    // If flags exist but nothing matched, fall through to slice
+    if (xi.length || bench.length) return { xi, bench };
+  }
+
+  // Priority 2: substitute / isBench flags
+  const hasSubFlag = players.some(
+    (p) => p.substitute === true || p.isBench === true
+  );
+  if (hasSubFlag) {
+    const xi = players.filter((p) => !p.substitute && !p.isBench);
+    const bench = players.filter((p) => p.substitute || p.isBench);
+    return { xi, bench };
+  }
+
+  // Fallback: first 11 as XI, rest bench
+  return {
+    xi: players.slice(0, 11),
+    bench: players.slice(11),
+  };
+};
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ICONS
    ═══════════════════════════════════════════════════════════════════════ */
 
 const I = {
-  Back: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M19 12H5M12 19l-7-7 7-7" />
-    </svg>
-  ),
-  Share: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
-    </svg>
-  ),
-  Shield: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
-    </svg>
-  ),
-  Pin: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11Z" />
-      <circle cx="12" cy="10" r="2.4" />
-    </svg>
-  ),
-  Calendar: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" />
-      <path d="M16 2v4M8 2v4M3 10h18" />
-    </svg>
-  ),
   Users: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8" />
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8" />
     </svg>
   ),
   Bench: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="2" y="6" width="20" height="4" rx="1" />
-      <path d="M4 10v7M20 10v7M8 10v4M16 10v4" />
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="6" width="20" height="4" rx="1" /><path d="M4 10v7M20 10v7M8 10v4M16 10v4" />
     </svg>
   ),
   Alert: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 9v4M12 17h.01M10.3 3.9 2.6 17a2 2 0 001.7 3h15.4a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0Z" />
     </svg>
   ),
   Refresh: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 12a9 9 0 0115.3-6.4L21 8M21 3v5h-5M21 12a9 9 0 01-15.3 6.4L3 16M3 21v-5h5" />
     </svg>
   ),
   Bat: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M14.5 3.5 20.5 9.5" />
-      <path d="M9 9 3 15a2.5 2.5 0 003.5 3.5L12 13" />
-      <path d="M12.5 5.5 18.5 11.5 14 16 8 10Z" />
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.5 3.5 20.5 9.5" /><path d="M9 9 3 15a2.5 2.5 0 003.5 3.5L12 13" /><path d="M12.5 5.5 18.5 11.5 14 16 8 10Z" />
     </svg>
   ),
   Wifi: ({ className }: { className?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01" />
     </svg>
   ),
@@ -313,10 +219,7 @@ const LazyImage: React.FC<{
       )}
       {showImg && (
         <>
-          {!loaded && (
-            <div className="absolute inset-0 shimmer rounded-full" />
-          )}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {!loaded && <div className="absolute inset-0 shimmer rounded-full" />}
           <img
             src={src!}
             alt={alt}
@@ -335,7 +238,7 @@ const LazyImage: React.FC<{
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
-   SKELETON LOADER
+   SKELETON
    ═══════════════════════════════════════════════════════════════════════ */
 
 const Skel = ({ className }: { className?: string }) => (
@@ -344,10 +247,7 @@ const Skel = ({ className }: { className?: string }) => (
 
 const PlayerSkel = ({ imgSz = 48 }: { imgSz?: number }) => (
   <div className="flex items-center gap-3.5 px-4 py-[14px]">
-    <div
-      className="rounded-full shimmer flex-shrink-0"
-      style={{ width: imgSz, height: imgSz }}
-    />
+    <div className="rounded-full shimmer flex-shrink-0" style={{ width: imgSz, height: imgSz }} />
     <div className="flex-1 space-y-2.5">
       <Skel className="h-[14px] w-3/5" />
       <Skel className="h-3 w-2/5" />
@@ -358,56 +258,26 @@ const PlayerSkel = ({ imgSz = 48 }: { imgSz?: number }) => (
 
 const FullSkeleton = () => (
   <div className="max-w-lg mx-auto px-3 sm:px-4 pt-3 pb-8 space-y-4">
-    {/* Match card */}
-    <div className={DT.card}>
-      <div className="px-5 py-7 flex flex-col items-center gap-4">
-        <div className="flex items-center gap-7">
-          <Skel className="!rounded-full h-[52px] w-[52px]" />
-          <Skel className="!rounded-full h-9 w-9" />
-          <Skel className="!rounded-full h-[52px] w-[52px]" />
-        </div>
-        <Skel className="h-3 w-52" />
-        <Skel className="h-3 w-36" />
-        <Skel className="h-3 w-28" />
-      </div>
-    </div>
-    {/* Tabs */}
     <Skel className="h-12 w-full !rounded-xl" />
-    {/* Playing XI */}
+    <Skel className="h-11 w-full !rounded-xl" />
     <div className={DT.card}>
       <div className="px-4 py-3 flex items-center gap-2.5">
         <Skel className="h-5 w-1 !rounded-full" />
         <Skel className="h-4 w-20" />
       </div>
       <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
-        {Array.from({ length: 7 }).map((_, i) => (
-          <PlayerSkel key={i} />
-        ))}
+        {Array.from({ length: 7 }).map((_, i) => <PlayerSkel key={i} />)}
       </div>
-    </div>
-    {/* Bench */}
-    <div className={DT.card}>
-      <div className="px-4 py-3 flex items-center gap-2.5">
-        <Skel className="h-5 w-1 !rounded-full" />
-        <Skel className="h-4 w-28" />
-      </div>
-      {Array.from({ length: 4 }).map((_, i) => (
-        <PlayerSkel key={i} imgSz={40} />
-      ))}
     </div>
   </div>
 );
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ERROR STATE
+   ERROR / EMPTY
    ═══════════════════════════════════════════════════════════════════════ */
 
-const ErrorView: React.FC<{ msg: string; onRetry: () => void }> = ({
-  msg,
-  onRetry,
-}) => (
+const ErrorView: React.FC<{ msg: string; onRetry: () => void }> = ({ msg, onRetry }) => (
   <div className="max-w-lg mx-auto px-4 py-24 flex flex-col items-center gap-6">
-    {/* Illustration */}
     <div className="relative">
       <div className="h-32 w-32 rounded-full bg-red-50 dark:bg-red-900/15 flex items-center justify-center">
         <div className="h-24 w-24 rounded-full bg-red-100/80 dark:bg-red-900/25 flex items-center justify-center">
@@ -418,16 +288,12 @@ const ErrorView: React.FC<{ msg: string; onRetry: () => void }> = ({
         <I.Alert className="h-5 w-5 text-red-400" />
       </div>
     </div>
-
     <div className="text-center space-y-2">
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-        Unable to Load Squad
-      </h3>
+      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Unable to Load Squad</h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
         {msg || "Please check your internet connection and try again."}
       </p>
     </div>
-
     <button
       onClick={onRetry}
       className="inline-flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-[#00b884] to-[#009270] text-white rounded-full text-sm font-bold hover:brightness-105 active:scale-95 transition-all duration-200 shadow-lg shadow-[#009270]/25"
@@ -438,35 +304,24 @@ const ErrorView: React.FC<{ msg: string; onRetry: () => void }> = ({
   </div>
 );
 
-/* ═══════════════════════════════════════════════════════════════════════
-   EMPTY STATE
-   ═══════════════════════════════════════════════════════════════════════ */
-
-const EmptyView = () => (
-  <div className="max-w-lg mx-auto px-4 py-24 flex flex-col items-center gap-5">
+const EmptyView = ({ label = "No Squad Available", sub = "Squad will appear here once officially announced." }: { label?: string; sub?: string }) => (
+  <div className="max-w-lg mx-auto px-4 py-16 flex flex-col items-center gap-5">
     <div className="relative">
-      <div className="h-32 w-32 rounded-full bg-gray-100 dark:bg-gray-800/50 flex items-center justify-center">
-        <div className="h-24 w-24 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
-          <I.Bat className="h-12 w-12 text-gray-300 dark:text-gray-600" />
+      <div className="h-28 w-28 rounded-full bg-gray-100 dark:bg-gray-800/50 flex items-center justify-center">
+        <div className="h-20 w-20 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+          <I.Bat className="h-10 w-10 text-gray-300 dark:text-gray-600" />
         </div>
-      </div>
-      <div className="absolute -bottom-1 -right-1 h-10 w-10 rounded-full bg-white dark:bg-[#111815] border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm">
-        <I.Users className="h-5 w-5 text-gray-400 dark:text-gray-500" />
       </div>
     </div>
     <div className="text-center space-y-2">
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-        No Squad Available
-      </h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
-        Squad will appear here once officially announced.
-      </p>
+      <h3 className="text-lg font-bold text-gray-900 dark:text-white">{label}</h3>
+      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">{sub}</p>
     </div>
   </div>
 );
 
 /* ═══════════════════════════════════════════════════════════════════════
-   TEAM TABS — segmented control with sliding indicator
+   TEAM TABS (top)
    ═══════════════════════════════════════════════════════════════════════ */
 
 const TeamTabs: React.FC<{
@@ -475,13 +330,9 @@ const TeamTabs: React.FC<{
   onChange: (t: 0 | 1) => void;
 }> = ({ names, active, onChange }) => (
   <div className="relative flex p-[5px] bg-gray-200/70 dark:bg-white/[0.06] rounded-2xl overflow-hidden">
-    {/* Slider */}
     <div
       className="absolute top-[5px] bottom-[5px] rounded-[13px] bg-gradient-to-r from-[#00b884] to-[#009270] shadow-lg shadow-[#009270]/20 transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] z-0"
-      style={{
-        width: "calc(50% - 5px)",
-        left: active === 0 ? 5 : "calc(50%)",
-      }}
+      style={{ width: "calc(50% - 5px)", left: active === 0 ? 5 : "calc(50%)" }}
     />
     {names.map((n, i) => (
       <button
@@ -499,6 +350,65 @@ const TeamTabs: React.FC<{
 );
 
 /* ═══════════════════════════════════════════════════════════════════════
+   SQUAD SUB-TABS — Playing XI / Bench per team
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const SquadSubTabs: React.FC<{
+  xiCount: number;
+  benchCount: number;
+  active: "xi" | "bench";
+  onChange: (t: "xi" | "bench") => void;
+}> = ({ xiCount, benchCount, active, onChange }) => (
+  <div className="flex gap-2">
+    <button
+      onClick={() => onChange("xi")}
+      disabled={xiCount === 0}
+      className={cx(
+        "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12.5px] font-bold transition-all duration-200 border",
+        active === "xi"
+          ? "bg-white dark:bg-[#161d1a] text-[#00734f] dark:text-[#3ddba4] border-[#009270]/25 dark:border-[#3ddba4]/25 shadow-sm"
+          : "bg-transparent text-gray-600 dark:text-gray-400 border-transparent hover:bg-white/60 dark:hover:bg-white/[0.03]",
+        xiCount === 0 && "opacity-40 cursor-not-allowed"
+      )}
+    >
+      <I.Users className="h-3.5 w-3.5" />
+      Playing XI
+      <span className={cx(
+        "h-5 min-w-[22px] px-1.5 flex items-center justify-center rounded-full text-[10px] tabular-nums",
+        active === "xi"
+          ? "bg-[#009270]/[0.12] text-[#00734f] dark:bg-[#3ddba4]/[0.15] dark:text-[#3ddba4]"
+          : "bg-gray-200 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400"
+      )}>
+        {xiCount}
+      </span>
+    </button>
+
+    <button
+      onClick={() => onChange("bench")}
+      disabled={benchCount === 0}
+      className={cx(
+        "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12.5px] font-bold transition-all duration-200 border",
+        active === "bench"
+          ? "bg-white dark:bg-[#161d1a] text-[#00734f] dark:text-[#3ddba4] border-[#009270]/25 dark:border-[#3ddba4]/25 shadow-sm"
+          : "bg-transparent text-gray-600 dark:text-gray-400 border-transparent hover:bg-white/60 dark:hover:bg-white/[0.03]",
+        benchCount === 0 && "opacity-40 cursor-not-allowed"
+      )}
+    >
+      <I.Bench className="h-3.5 w-3.5" />
+      Bench
+      <span className={cx(
+        "h-5 min-w-[22px] px-1.5 flex items-center justify-center rounded-full text-[10px] tabular-nums",
+        active === "bench"
+          ? "bg-[#009270]/[0.12] text-[#00734f] dark:bg-[#3ddba4]/[0.15] dark:text-[#3ddba4]"
+          : "bg-gray-200 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400"
+      )}>
+        {benchCount}
+      </span>
+    </button>
+  </div>
+);
+
+/* ═══════════════════════════════════════════════════════════════════════
    PLAYER CARD
    ═══════════════════════════════════════════════════════════════════════ */
 
@@ -506,11 +416,11 @@ const PlayerCard: React.FC<{
   player: Player;
   idx: number;
   compact?: boolean;
-}> = ({ player, idx, compact = false }) => {
-  const sz = compact ? 40 : 48;
+  showBenchDot?: boolean;
+}> = ({ player, idx, compact = false, showBenchDot = false }) => {
+  const sz = compact ? 42 : 48;
   const label = roleLabel(player.role);
   const emoji = roleEmoji(player.role);
-  const isXI = player.playingXI !== false && !compact;
 
   return (
     <div
@@ -519,15 +429,13 @@ const PlayerCard: React.FC<{
         compact ? "py-[12px]" : "py-[14px]",
         "transition-all duration-250 active:scale-[0.985] cursor-default group",
         "hover:bg-[#009270]/[0.025] dark:hover:bg-[#3ddba4]/[0.035]",
-        idx > 0 &&
-          "border-t border-gray-100/80 dark:border-white/[0.04]"
+        idx > 0 && "border-t border-gray-100/80 dark:border-white/[0.04]"
       )}
       style={{
-        animationDelay: `${idx * 35}ms`,
-        animation: "playerSlideIn 0.4s ease both",
+        animationDelay: `${idx * 30}ms`,
+        animation: "playerSlideIn 0.35s ease both",
       }}
     >
-      {/* Avatar */}
       <div className="relative flex-shrink-0">
         <LazyImage
           src={player.image}
@@ -536,20 +444,23 @@ const PlayerCard: React.FC<{
           fallback={initials(player.name)}
           className="shadow-sm"
         />
-        {/* Playing XI green dot */}
-        {isXI && (
+        {!compact && !showBenchDot && (
           <span className="absolute -bottom-[1px] -right-[1px] h-[14px] w-[14px] rounded-full bg-white dark:bg-[#111815] flex items-center justify-center shadow-sm">
             <span className="h-[8px] w-[8px] rounded-full bg-gradient-to-br from-[#00b884] to-[#009270]" />
           </span>
         )}
+        {showBenchDot && (
+          <span className="absolute -bottom-[1px] -right-[1px] h-[14px] w-[14px] rounded-full bg-white dark:bg-[#111815] flex items-center justify-center shadow-sm">
+            <span className="h-[8px] w-[8px] rounded-full bg-gray-400 dark:bg-gray-500" />
+          </span>
+        )}
       </div>
 
-      {/* Name & Role */}
       <div className="flex-1 min-w-0">
         <span
           className={cx(
             "block font-semibold text-gray-900 dark:text-white truncate leading-snug",
-            compact ? "text-[13px]" : "text-[14px] sm:text-[15px]"
+            compact ? "text-[13.5px]" : "text-[14px] sm:text-[15px]"
           )}
         >
           {player.name}
@@ -560,7 +471,7 @@ const PlayerCard: React.FC<{
             <span
               className={cx(
                 "text-gray-500 dark:text-gray-400 truncate leading-snug",
-                compact ? "text-[11px]" : "text-[12px] sm:text-[13px]"
+                compact ? "text-[11.5px]" : "text-[12px] sm:text-[13px]"
               )}
             >
               {label}
@@ -569,25 +480,14 @@ const PlayerCard: React.FC<{
         )}
       </div>
 
-      {/* Badges */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {player.captain && (
-          <span
-            className={cx(
-              DT.badge,
-              "h-[22px] px-[7px] bg-[#009270]/[0.1] text-[#00734f] dark:bg-[#3ddba4]/[0.12] dark:text-[#3ddba4] border border-[#009270]/20 dark:border-[#3ddba4]/20"
-            )}
-          >
+          <span className={cx(DT.badge, "h-[22px] px-[7px] bg-[#009270]/[0.1] text-[#00734f] dark:bg-[#3ddba4]/[0.12] dark:text-[#3ddba4] border border-[#009270]/20 dark:border-[#3ddba4]/20")}>
             C
           </span>
         )}
         {player.keeper && (
-          <span
-            className={cx(
-              DT.badge,
-              "h-[22px] px-[7px] bg-blue-50 text-blue-600 dark:bg-blue-900/25 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40"
-            )}
-          >
+          <span className={cx(DT.badge, "h-[22px] px-[7px] bg-blue-50 text-blue-600 dark:bg-blue-900/25 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40")}>
             WK
           </span>
         )}
@@ -597,15 +497,16 @@ const PlayerCard: React.FC<{
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
-   PLAYER LIST SECTION
+   PLAYER LIST WRAPPER
    ═══════════════════════════════════════════════════════════════════════ */
 
-const PlayerSection: React.FC<{
+const PlayerList: React.FC<{
   title: string;
   icon: React.ReactNode;
   players: Player[];
   compact?: boolean;
-}> = ({ title, icon, players, compact = false }) => {
+  showBenchDot?: boolean;
+}> = ({ title, icon, players, compact = false, showBenchDot = false }) => {
   if (!players.length) return null;
   return (
     <div className={cx(DT.card, "card-enter")}>
@@ -620,10 +521,11 @@ const PlayerSection: React.FC<{
       <div>
         {players.map((p, i) => (
           <PlayerCard
-            key={p.profileId}
+            key={`${p.profileId}-${i}`}
             player={p}
             idx={i}
             compact={compact}
+            showBenchDot={showBenchDot}
           />
         ))}
       </div>
@@ -632,7 +534,7 @@ const PlayerSection: React.FC<{
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
-   TEAM SECTION
+   TEAM BLOCK — with sub-tabs XI/Bench per team
    ═══════════════════════════════════════════════════════════════════════ */
 
 const TeamBlock: React.FC<{
@@ -640,55 +542,75 @@ const TeamBlock: React.FC<{
   teamName: string;
   teamFlag: string;
 }> = ({ players, teamName, teamFlag }) => {
-  const hasXIFlag = players.some((p) => p.playingXI === true);
-  const xi = hasXIFlag
-    ? players.filter((p) => p.playingXI !== false)
-    : players.slice(0, 11);
-  const bench = hasXIFlag
-    ? players.filter((p) => p.playingXI === false)
-    : players.slice(11);
+  const [subTab, setSubTab] = useState<"xi" | "bench">("xi");
+  const { xi, bench } = useMemo(() => splitSquad(players), [players]);
 
-  if (!players.length) return <EmptyView />;
+  // Reset sub-tab if switching to a team where current tab is empty
+  useEffect(() => {
+    if (subTab === "xi" && xi.length === 0 && bench.length > 0) setSubTab("bench");
+    if (subTab === "bench" && bench.length === 0 && xi.length > 0) setSubTab("xi");
+  }, [xi.length, bench.length, subTab]);
+
+  if (!players.length) {
+    return <EmptyView label={`No squad announced for ${teamName}`} sub="Check back closer to match time." />;
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5">
       {/* Team header */}
       <div className="flex items-center gap-3 px-1 card-enter">
         <LazyImage
           src={teamFlag}
           alt={teamName}
-          size={36}
+          size={38}
           fallback={initials(teamName)}
           className="shadow-sm"
         />
-        <div>
-          <div className="text-[15px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-snug">
+        <div className="flex-1 min-w-0">
+          <div className="text-[15px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-snug truncate">
             {teamName}
           </div>
-          <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-0.5">
-            {players.length} Players
+          <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-0.5 flex items-center gap-2">
+            <span>{xi.length} in Playing XI</span>
+            <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+            <span>{bench.length} on Bench</span>
           </div>
         </div>
       </div>
 
-      {/* Playing XI */}
-      {xi.length > 0 && (
-        <PlayerSection
-          title="Playing XI"
-          icon={<I.Users className="h-4 w-4" />}
-          players={xi}
-        />
-      )}
+      {/* Sub-tabs */}
+      <SquadSubTabs
+        xiCount={xi.length}
+        benchCount={bench.length}
+        active={subTab}
+        onChange={setSubTab}
+      />
 
-      {/* Bench */}
-      {bench.length > 0 && (
-        <PlayerSection
-          title="Bench Players"
-          icon={<I.Bench className="h-4 w-4" />}
-          players={bench}
-          compact
-        />
-      )}
+      {/* Content */}
+      <div key={subTab}>
+        {subTab === "xi" && xi.length > 0 && (
+          <PlayerList
+            title="Playing XI"
+            icon={<I.Users className="h-4 w-4" />}
+            players={xi}
+          />
+        )}
+        {subTab === "bench" && bench.length > 0 && (
+          <PlayerList
+            title={`Bench — ${teamName}`}
+            icon={<I.Bench className="h-4 w-4" />}
+            players={bench}
+            compact
+            showBenchDot
+          />
+        )}
+        {subTab === "xi" && xi.length === 0 && (
+          <EmptyView label="Playing XI not announced" sub="It will appear here once the toss is completed." />
+        )}
+        {subTab === "bench" && bench.length === 0 && (
+          <EmptyView label="No bench players listed" sub={`No substitute players available for ${teamName}.`} />
+        )}
+      </div>
     </div>
   );
 };
@@ -707,54 +629,32 @@ export default function Squad() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<0 | 1>(0);
 
-  
- const fetchSquad = useCallback(async () => {
-  if (!matchId) {
-    setError("No match ID provided.");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    setLoading(true);
-    setError(null);
-
-    const squadRes = await fetch(
-  `/api/score/squad?matchId=${matchId}`,
-  {
-    cache: "no-store",
-  }
-);
-
-if (!squadRes.ok) {
-  throw new Error("Failed to load squad.");
-}
-
-const squad: SquadAPIResponse = await squadRes.json();
-
-if (!squad.success) {
-  throw new Error("Squad data unavailable.");
-}
-setData(squad);
-    
-  } catch (e) {
-    setError(e instanceof Error ? e.message : "Failed to fetch squad.");
-  } finally {
-    setLoading(false);
-  }
-}, [matchId]);
+  const fetchSquad = useCallback(async () => {
+    if (!matchId) {
+      setError("No match ID provided.");
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const squadRes = await fetch(`/api/score/squad?matchId=${matchId}`, {
+        cache: "no-store",
+      });
+      if (!squadRes.ok) throw new Error("Failed to load squad.");
+      const squad: SquadAPIResponse = await squadRes.json();
+      if (!squad.success) throw new Error("Squad data unavailable.");
+      setData(squad);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to fetch squad.");
+    } finally {
+      setLoading(false);
+    }
+  }, [matchId]);
 
   useEffect(() => {
     fetchSquad();
   }, [fetchSquad]);
-
-const handleBack = useCallback(() => {
-  if (window.history.length > 1) {
-    navigate(-1);
-  } else {
-    navigate("/", { replace: true });
-  }
-}, [navigate]);
 
   const currentPlayers = useMemo(
     () => (tab === 0 ? data?.team1 ?? [] : data?.team2 ?? []),
@@ -765,36 +665,23 @@ const handleBack = useCallback(() => {
 
   return (
     <div className="min-h-screen bg-[#F5F7FA] dark:bg-[#0a0f0d] transition-colors duration-300 font-sans overflow-x-hidden">
-      {/* ── Global Animations ── */}
       <style>{`
         @keyframes playerSlideIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .card-enter { animation: cardFadeIn 0.4s ease both; }
+        @keyframes cardFadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .card-enter {
-          animation: cardFadeIn 0.45s ease both;
-        }
-        @keyframes cardFadeIn {
-          from { opacity: 0; transform: translateY(14px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
         .shimmer {
-          background: linear-gradient(
-            110deg,
-            #e8e8e8 8%,
-            #f5f5f5 18%,
-            #e8e8e8 33%
-          );
+          background: linear-gradient(110deg, #e8e8e8 8%, #f5f5f5 18%, #e8e8e8 33%);
           background-size: 200% 100%;
           animation: shimmerMove 1.5s linear infinite;
         }
         .dark .shimmer {
-          background: linear-gradient(
-            110deg,
-            #1a2420 8%,
-            #222d28 18%,
-            #1a2420 33%
-          );
+          background: linear-gradient(110deg, #1a2420 8%, #222d28 18%, #1a2420 33%);
           background-size: 200% 100%;
         }
         @keyframes shimmerMove {
@@ -803,20 +690,11 @@ const handleBack = useCallback(() => {
         }
       `}</style>
 
-     
-
-      {/* Loading */}
       {loading && !data && <FullSkeleton />}
+      {error && !data && !loading && <ErrorView msg={error} onRetry={fetchSquad} />}
 
-      {/* Error (no data) */}
-      {error && !data && !loading && (
-        <ErrorView msg={error} onRetry={fetchSquad} />
-      )}
-
-      {/* Content */}
       {data && (
         <main className="max-w-lg mx-auto px-3 sm:px-4 pt-3 pb-12 space-y-4">
-          {/* Stale-data warning */}
           {error && (
             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 text-[12px] text-amber-700 dark:text-amber-400 flex items-center gap-2 card-enter">
               <I.Alert className="h-4 w-4 shrink-0" />
@@ -826,8 +704,6 @@ const handleBack = useCallback(() => {
             </div>
           )}
 
-          
-
           {/* Team Tabs */}
           <TeamTabs
             names={[data.team1Name, data.team2Name]}
@@ -835,7 +711,7 @@ const handleBack = useCallback(() => {
             onChange={setTab}
           />
 
-          {/* Active Team */}
+          {/* Active Team with its own XI/Bench sub-tabs */}
           <TeamBlock
             key={tab}
             players={currentPlayers}
@@ -843,7 +719,6 @@ const handleBack = useCallback(() => {
             teamFlag={currentFlag}
           />
 
-          {/* Bottom safe area for Android gesture nav */}
           <div className="h-8" aria-hidden="true" />
         </main>
       )}
