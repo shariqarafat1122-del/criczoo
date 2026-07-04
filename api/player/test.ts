@@ -115,7 +115,7 @@ interface RawScheduleData {
 /*  Constants                                                                */
 /* ------------------------------------------------------------------------ */
 
-const CRICBUZZ_BASE_URL = 'https://www.cricbuzz.com/cricket-schedule/series/all';
+const CRICBUZZ_BASE_URL = 'https://www.cricbuzz.com/cricket-schedule/upcoming-series/all';
 const CRICBUZZ_IMAGE_BASE_URL = 'https://static.cricbuzz.com/a/img/v1/i1/c';
 
 /* ------------------------------------------------------------------------ */
