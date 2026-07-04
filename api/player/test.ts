@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as cheerio from 'cheerio';
 import * as fs from 'fs';
-import * as path from 'path';
+
+const data = "https://criczoo.vercel.app/data/ALLMATCH.html";
 
 /* ------------------------------------------------------------------------ */
 /*  Interfaces                                                               */
