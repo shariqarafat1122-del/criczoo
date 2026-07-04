@@ -1,8 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as cheerio from 'cheerio';
-import * as fs from 'fs';
-
-const data = "https://criczoo.vercel.app/data/ALLMATCH.html";
+import { SCHEDULE_HTML } from './scheduleHtml';
 
 /* ------------------------------------------------------------------------ */
 /*  Interfaces                                                               */
@@ -116,7 +114,7 @@ interface RawScheduleData {
 /*  Constants                                                                */
 /* ------------------------------------------------------------------------ */
 
-const CRICBUZZ_BASE_URL = 'https://www.cricbuzz.com/cricket-schedule/upcoming-series/all';
+const CRICBUZZ_BASE_URL = 'https://www.cricbuzz.com';
 const CRICBUZZ_IMAGE_BASE_URL = 'https://static.cricbuzz.com/a/img/v1/i1/c';
 
 /* ------------------------------------------------------------------------ */
@@ -480,50 +478,15 @@ function buildDaysFromRawSchedule(raw: RawScheduleData): DayInfo[] {
 }
 
 /**
- * Resolves the absolute path to the uploaded Cricbuzz schedule HTML file.
- * Checks a small set of likely locations so the function keeps working
- * whether it is run locally, bundled by Vercel, or given an override via
- * the SCHEDULE_HTML_PATH environment variable.
- */
-function resolveScheduleHtmlPath(): string | null {
-  const candidates: string[] = [];
-
-  if (process.env.SCHEDULE_HTML_PATH) {
-    candidates.push(process.env.SCHEDULE_HTML_PATH);
-  }
-
-  candidates.push(
-    path.join(process.cwd(), 'data', 'ALLMATCH.html'),
-    path.join(process.cwd(), 'public', 'ALLMATCH.html'),
-    path.join(process.cwd(), 'ALLMATCH.html'),
-    path.join(__dirname, 'ALLMATCH.html'),
-    path.join(__dirname, '..', 'data', 'ALLMATCH.html'),
-    path.join('/mnt/user-data/uploads', 'ALLMATCH.html'),
-  );
-
-  for (const candidate of candidates) {
-    try {
-      if (candidate && fs.existsSync(candidate)) {
-        return candidate;
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Reads the schedule HTML from disk. Never throws; returns an empty
- * string on any failure so the caller can respond with a clean error.
+ * Returns the Cricbuzz schedule HTML. The HTML is embedded directly into
+ * the compiled TypeScript bundle (see scheduleHtml.ts) at build time, so
+ * there is no filesystem lookup at runtime and no risk of the file being
+ * excluded from the Vercel deployment bundle. Never throws; returns an
+ * empty string if the embedded constant is somehow empty or unavailable.
  */
 function readScheduleHtml(): string {
-  const filePath = resolveScheduleHtmlPath();
-  if (!filePath) return '';
-
   try {
-    return fs.readFileSync(filePath, 'utf-8');
+    return SCHEDULE_HTML || '';
   } catch {
     return '';
   }
