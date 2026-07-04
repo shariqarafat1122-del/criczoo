@@ -1,51 +1,89 @@
-
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
 
-interface PlayerProfile {
+// ---------- Shapes matching PlayerProfilePage.tsx ----------
+
+interface RankingEntry {
+  current: string;
+  best: string;
+}
+
+interface Rankings {
+  test: string;
+  odi: string;
+  t20i: RankingEntry;
+}
+
+interface BattingFormEntry {
+  score: string;
+  opponent: string;
+  format: string;
+  date: string;
+}
+
+interface CareerFormatStats {
+  matches?: number;
+  runs?: number;
+  highest?: string;
+  average?: number;
+  strikeRate?: number;
+  fifties?: number;
+  hundreds?: number;
+  fours?: number;
+  sixes?: number;
+  notOuts?: number;
+}
+
+interface CareerSummary {
+  test?: CareerFormatStats;
+  odi?: CareerFormatStats;
+  t20i?: CareerFormatStats;
+  ipl?: CareerFormatStats;
+  text?: string;
+}
+
+interface PlayerProfileResponse {
+  success: boolean;
+  profileId: string;
   name: string;
-  image: string;
+  country: string;
+  playerImage: string | null;
+  born: string;
+  birthPlace: string;
   role: string;
   battingStyle: string;
   bowlingStyle: string;
-  born: string;
-  birthPlace: string;
+  iccRankings: Rankings;
   teams: string[];
-  stats: Record<string, Record<string, string>>; // e.g. { batting: { Test: "...", ODI: "..." } }
-  bio: string;
-  [key: string]: unknown;
+  battingForm: BattingFormEntry[];
+  careerSummary: CareerSummary;
+  isCaptain?: boolean;
+  isKeeper?: boolean;
 }
 
-export default async function handler( req: VercelRequest, res: VercelResponse): 
-  Promise<void> {
+export default async function handler( req: VercelRequest, res: VercelResponse
+): Promise<void> {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
 
-const { profileId } = req.query;
-  
-  // 👇 Yahan apna URL daalo agar file ke andar hardcode karna hai.
-  // Agar khaali ("") rakhoge, to ?url= query param se le lega.
+  const profileId = (req.query.profileId as string | undefined) || "";
 
-  
-  const HARDCODED_URL: string = `https://www.cricbuzz.com/profiles/${profileId}`;
-
-  const targetUrl: string | undefined =
-    HARDCODED_URL || (req.query.url as string | undefined);
-
-  if (!targetUrl) {
+  if (!profileId) {
     res.status(400).json({
       success: false,
-      message: "Missing url. Set HARDCODED_URL in file or pass ?url=",
+      message: "Missing profileId. Pass ?profileId=9443/tim-seifert",
     });
     return;
   }
+
+  const targetUrl = `https://www.cricbuzz.com/profiles/${profileId}`;
 
   let parsedUrl: URL;
   try {
     parsedUrl = new URL(targetUrl);
   } catch (e) {
-    res.status(400).json({ success: false, message: "Invalid url" });
+    res.status(400).json({ success: false, message: "Invalid profileId" });
     return;
   }
 
@@ -58,6 +96,11 @@ const { profileId } = req.query;
       },
     });
 
+    if (response.status === 404) {
+      res.status(404).json({ success: false, message: "Player not found" });
+      return;
+    }
+
     if (!response.ok) {
       res.status(response.status).json({
         success: false,
@@ -69,32 +112,14 @@ const { profileId } = req.query;
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // ---------- 1. Try __NEXT_DATA__ ----------
-    const nextDataScript = $("#__NEXT_DATA__").html();
-    if (nextDataScript) {
-      try {
-        const nextData: unknown = JSON.parse(nextDataScript);
-        const profile = extractPlayerFromNextData(nextData);
-        if (profile && Object.keys(profile).length > 0) {
-          res.status(200).json({
-            success: true,
-            method: "next-data",
-            player: profile,
-          });
-          return;
-        }
-      } catch (e) {
-        // fall through
-      }
+    const profile = extractPlayerFromHtml($, profileId);
+
+    if (!profile.name) {
+      res.status(404).json({ success: false, message: "Player not found" });
+      return;
     }
 
-    // ---------- 2 & 3. HTML heuristics (site-pattern + generic) ----------
-    const profile = extractPlayerFromHtml($);
-
-    res.status(200).json({
-      success: true,
-      player: profile,
-    });
+    res.status(200).json(profile);
   } catch (err) {
     const error = err as Error;
     res.status(500).json({ success: false, message: error.message });
@@ -102,115 +127,87 @@ const { profileId } = req.query;
 }
 
 // -----------------------------------------------------------------
-// Strategy 1: __NEXT_DATA__ — recursively find an object that looks
-// like a player profile (has name + role/batting/bowling-ish keys).
+// Helpers to parse Cricbuzz-style strings into typed fields
 // -----------------------------------------------------------------
-function extractPlayerFromNextData(nextData: unknown): Partial<PlayerProfile> | null {
-  let bestMatch: Record<string, unknown> | null = null;
 
-  const looksLikePlayer = (obj: unknown): obj is Record<string, unknown> => {
-    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false;
-    const keys = Object.keys(obj as Record<string, unknown>)
-      .join(",")
-      .toLowerCase();
-    const hasName = keys.includes("name") || keys.includes("fullname");
-    const hasPlayerish =
-      keys.includes("battingstyle") ||
-      keys.includes("bowlingstyle") ||
-      keys.includes("role") ||
-      keys.includes("dateofbirth") ||
-      keys.includes("birthplace") ||
-      keys.includes("intlteam");
-    return hasName && hasPlayerish;
-  };
-
-  const visit = (node: unknown, depth: number): void => {
-    if (!node || typeof node !== "object" || depth > 14 || bestMatch) return;
-
-    if (Array.isArray(node)) {
-      for (const item of node) {
-        if (looksLikePlayer(item)) {
-          bestMatch = item;
-          return;
-        }
-        visit(item, depth + 1);
-        if (bestMatch) return;
-      }
-      return;
-    }
-
-    const obj = node as Record<string, unknown>;
-    if (looksLikePlayer(obj)) {
-      bestMatch = obj;
-      return;
-    }
-    for (const k of Object.keys(obj)) {
-      visit(obj[k], depth + 1);
-      if (bestMatch) return;
-    }
-  };
-
-  visit(nextData, 0);
-  if (!bestMatch) return null;
-
-  return flattenPlayerObject(bestMatch);
-}
-
-function flattenPlayerObject(obj: Record<string, unknown>): Partial<PlayerProfile> {
-  const get = (keys: string[]): string => {
-    for (const k of Object.keys(obj)) {
-      if (keys.includes(k.toLowerCase())) {
-        const v = obj[k];
-        if (typeof v === "string" || typeof v === "number") return String(v);
-      }
-    }
-    return "";
-  };
-
+function parseRankString(str: string): RankingEntry {
+  const currentMatch = str.match(/Current Rank:\s*([^,]+)/i);
+  const bestMatch = str.match(/Best Rank:\s*([^,]+)/i);
   return {
-    name: get(["name", "fullname", "playername"]),
-    role: get(["role", "playingrole"]),
-    battingStyle: get(["battingstyle"]),
-    bowlingStyle: get(["bowlingstyle"]),
-    born: get(["dateofbirth", "born", "birthdate"]),
-    birthPlace: get(["birthplace", "birthplacename"]),
-    image: get(["image", "imageurl", "faceimageid"]),
-    _raw: obj,
+    current: currentMatch?.[1]?.trim() || "-",
+    best: bestMatch?.[1]?.trim() || "-",
+  };
+}
+
+function parseFormatNumber(
+  str: string,
+  format: "ODI" | "T20" | "IPL" | "Test"
+): number | undefined {
+  const regex = new RegExp(`${format}:\\s*([\\d.]+)`, "i");
+  const match = str.match(regex);
+  if (!match) return undefined;
+  const num = parseFloat(match[1]);
+  return isNaN(num) ? undefined : num;
+}
+
+function parseFormatString(
+  str: string,
+  format: "ODI" | "T20" | "IPL" | "Test"
+): string | undefined {
+  const regex = new RegExp(`${format}:\\s*([\\w.*-]+)`, "i");
+  return str.match(regex)?.[1];
+}
+
+function buildFormatStats(
+  table: Record<string, string>,
+  format: "ODI" | "T20" | "IPL" | "Test"
+): CareerFormatStats {
+  return {
+    matches: parseFormatNumber(table["Matches"] ?? "", format),
+    runs: parseFormatNumber(table["Runs"] ?? "", format),
+    highest: parseFormatString(table["Highest"] ?? "", format),
+    average: parseFormatNumber(table["Average"] ?? "", format),
+    strikeRate: parseFormatNumber(table["SR"] ?? "", format),
+    fifties: parseFormatNumber(table["50s"] ?? "", format),
+    hundreds: parseFormatNumber(table["100s"] ?? "", format),
+    fours: parseFormatNumber(table["Fours"] ?? "", format),
+    sixes: parseFormatNumber(table["Sixes"] ?? "", format),
+    notOuts: parseFormatNumber(table["Not Out"] ?? "", format),
   };
 }
 
 // -----------------------------------------------------------------
-// Strategy 2 & 3: HTML — try known site patterns first, then
-// fall back to generic label scanning (works on unfamiliar markup).
+// Main HTML extraction — returns data already shaped for the frontend
 // -----------------------------------------------------------------
-function extractPlayerFromHtml($: CheerioAPI): PlayerProfile {
-  const profile: PlayerProfile = {
-    name: "",
-    image: "",
+function extractPlayerFromHtml(
+  $: CheerioAPI,
+  profileId: string
+): PlayerProfileResponse {
+  // --- Name ---
+  const rawName =
+    $("h1").first().text().trim() ||
+    $('[class*="player-name" i], [class*="playerName" i]').first().text().trim() ||
+    $("title").text().split("|")[0].trim();
+  const name = rawName.split(" - ")[0].trim();
+
+  // --- Image ---
+  const heroImg = $(
+    'img[class*="player" i], img[class*="profile" i], img[class*="avatar" i]'
+  )
+    .first()
+    .attr("src");
+  const playerImage = heroImg || $("img").first().attr("src") || null;
+
+  // --- Generic label scanner for role / batting / bowling / born / birthplace ---
+  const fields: Record<string, string> = {
     role: "",
     battingStyle: "",
     bowlingStyle: "",
     born: "",
     birthPlace: "",
-    teams: [],
-    stats: {},
-    bio: "",
   };
 
-  // --- Name: try <h1> first (works on most sites incl. Cricbuzz/ESPN) ---
-  profile.name =
-    $("h1").first().text().trim() ||
-    $('[class*="player-name" i], [class*="playerName" i]').first().text().trim() ||
-    $("title").text().split("|")[0].trim();
-
-  // --- Image: first reasonably large image near the top of the page ---
-  const heroImg = $('img[class*="player" i], img[class*="profile" i], img[class*="avatar" i]')
-    .first()
-    .attr("src");
-  profile.image = heroImg || $("img").first().attr("src") || "";
-
-  // --- Generic label scanner: find "Label: Value" or "Label \n Value" pairs ---
-  const labelMap: Record<string, keyof PlayerProfile> = {
+  const labelMap: Record<string, keyof typeof fields> = {
     role: "role",
     "playing role": "role",
     batting: "battingStyle",
@@ -237,28 +234,30 @@ function extractPlayerFromHtml($: CheerioAPI): PlayerProfile {
 
     if (ownText && labelMap[ownText]) {
       const field = labelMap[ownText];
-      if (profile[field]) return; // already found, keep first match
+      if (fields[field]) return;
 
-      // value is usually the next sibling or parent's next sibling text
       const candidate =
         $el.next().text().trim() ||
         $el.parent().next().text().trim() ||
         $el.parent().text().replace($el.text(), "").trim();
 
       if (candidate && candidate.length < 200) {
-        (profile[field] as string) = candidate;
+        fields[field] = candidate;
       }
     }
   });
 
-  // --- Teams: links that look like team pages, deduped ---
+  // --- Teams ---
   const teamTexts = $('a[href*="team" i], a[href*="/teams/" i]')
     .map((_: number, el: any) => $(el).text().trim())
     .get()
-    .filter((t: string) => t && t.length < 40);
-  profile.teams = [...new Set(teamTexts)].slice(0, 10);
+    .filter((t: string) => t && t.length < 40 && t.toLowerCase() !== "teams");
+  const teams = [...new Set(teamTexts)].slice(0, 10);
 
-  // --- Stats tables: any <table> with header row + data rows ---
+  // --- ICC Rankings & career tables from <table> elements ---
+  const rankingStrings: Record<string, string> = {};
+  let battingTable: Record<string, string> = {};
+
   $("table").each((_: number, table: any) => {
     const $table = $(table);
     const headers = $table
@@ -269,11 +268,9 @@ function extractPlayerFromHtml($: CheerioAPI): PlayerProfile {
 
     if (!headers.length) return;
 
-    // Try to name this table using nearby heading text
     const nearbyHeading =
       $table.prevAll("h2, h3, h4").first().text().trim() ||
-      $table.closest("div").prevAll("h2, h3, h4").first().text().trim() ||
-      `table_${Object.keys(profile.stats).length + 1}`;
+      $table.closest("div").prevAll("h2, h3, h4").first().text().trim();
 
     const rows: Record<string, string>[] = [];
     $table.find("tbody tr").each((_i: number, tr: any) => {
@@ -289,32 +286,59 @@ function extractPlayerFromHtml($: CheerioAPI): PlayerProfile {
       rows.push(row);
     });
 
-    if (rows.length) {
-      // Flatten into { format: firstRowSummary } style for quick reading,
-      // plus keep raw rows under a "_rows" key.
-      const flatSummary: Record<string, string> = {};
-      rows.forEach((row: Record<string, string>, idx: number) => {
-        const label = row[headers[0]] || `row_${idx + 1}`;
-        flatSummary[label] = Object.entries(row)
-          .slice(1)
-          .map(([k, v]) => `${k}: ${v}`)
-          .join(", ");
-      });
-      profile.stats[nearbyHeading || `table_${idx_fallback(profile)}`] = flatSummary;
+    if (!rows.length) return;
+
+    const flatSummary: Record<string, string> = {};
+    rows.forEach((row: Record<string, string>, idx: number) => {
+      const label = row[headers[0]] || `row_${idx + 1}`;
+      flatSummary[label] = Object.entries(row)
+        .slice(1)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(", ");
+    });
+
+    if (/rank/i.test(nearbyHeading)) {
+      Object.assign(rankingStrings, flatSummary);
+    } else if (!Object.keys(battingTable).length) {
+      // first non-ranking table assumed to be the batting stats table
+      battingTable = flatSummary;
     }
   });
 
-  // --- Bio: longest paragraph on the page (rough heuristic) ---
+  const iccRankings: Rankings = {
+    test: parseRankString(rankingStrings["Test"] ?? "").current,
+    odi: parseRankString(rankingStrings["ODI"] ?? "").current,
+    t20i: parseRankString(rankingStrings["T20I"] ?? ""),
+  };
+
+  const careerSummary: CareerSummary = {
+    odi: buildFormatStats(battingTable, "ODI"),
+    t20i: buildFormatStats(battingTable, "T20"),
+    ipl: buildFormatStats(battingTable, "IPL"),
+  };
+
+  // --- Bio: longest paragraph ---
   let longest = "";
   $("p").each((_: number, p: any) => {
     const text = $(p).text().trim();
     if (text.length > longest.length) longest = text;
   });
-  profile.bio = longest.slice(0, 1000);
+  careerSummary.text = longest.slice(0, 1000);
 
-  return profile;
+  return {
+    success: true,
+    profileId,
+    name: name || "",
+    country: fields.birthPlace || "",
+    playerImage,
+    born: fields.born || "",
+    birthPlace: fields.birthPlace || "",
+    role: fields.role || "",
+    battingStyle: fields.battingStyle || "",
+    bowlingStyle: fields.bowlingStyle || "",
+    iccRankings,
+    teams,
+    battingForm: [], // Cricbuzz profile page doesn't expose recent-form data directly
+    careerSummary,
+  };
 }
-
-function idx_fallback(profile: PlayerProfile): number {
-  return Object.keys(profile.stats).length + 1;
-    }
