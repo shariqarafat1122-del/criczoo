@@ -88,7 +88,6 @@ export default async function handler(
           res.status(200).json({
             success: true,
             method: "next-data",
-            source: targetUrl,
             player: profile,
           });
           return;
