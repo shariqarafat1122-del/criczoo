@@ -534,7 +534,7 @@ function parseScheduleHtml(html: string): DayInfo[] {
 /*  Vercel Serverless Function handler                                      */
 /* ------------------------------------------------------------------------ */
 
-export default function handler(req: VercelRequest, res: VercelResponse): void {
+export default async function handler(req: VercelRequest, res: VercelResponse): void {
   try {
     const html = await readScheduleHtml();
 
