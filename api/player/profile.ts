@@ -182,37 +182,20 @@ function buildFormatStats(
 
 
 function extractCountry($: CheerioAPI): string {
-  const countryFromTeam = $('a[href*="/cricket-team/" i], a[href*="/teams/" i]')
-    .filter((_: number, el: any) => {
-      const text = $(el).text().trim();
-      return text.length > 0 && text.length < 30;
-    })
-    .first()
-    .text()
-    .trim();
-
-  if (countryFromTeam) return countryFromTeam;
-
   let country = "";
-  $("*").each((_: number, el: any) => {
+  $("img[alt]").each((_: number, el: any) => {
     if (country) return;
-    const $el = $(el);
-    const ownText = $el
-      .clone()
-      .children()
-      .remove()
-      .end()
-      .text()
-      .trim()
-      .toLowerCase()
-      .replace(/:$/, "");
-    if (ownText === "country" || ownText === "intl team") {
-      const candidate =
-        $el.next().text().trim() || $el.parent().next().text().trim();
-      if (candidate && candidate.length < 40) country = candidate;
+    const $img = $(el);
+    const alt = $img.attr("alt")?.trim();
+    if (!alt) return;
+    // flag images are small (width ~30, height ~20) and alt is the country name
+    const width = $img.attr("width");
+    const height = $img.attr("height");
+    if (width === "30" && height === "20") {
+      const span = $img.closest("div").next("span").text().trim();
+      country = span || alt;
     }
   });
-
   return country;
 }
   
