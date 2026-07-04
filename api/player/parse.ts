@@ -1,20 +1,4 @@
-
-// Usage: GET /api/scrape?url=https://example.com/matches
-//
-// Strategy:
-// 1. Fetch the target URL's HTML.
-// 2. If it's a Next.js page, pull out the embedded __NEXT_DATA__ JSON
-//    (this is usually the cleanest, most complete source of truth).
-// 3. Otherwise, fall back to generic HTML parsing with cheerio to find
-//    "match card"-like repeating blocks and extract text/labels/images.
-//
-// Response shape:
-// {
-//   "source": "<url>",
-//   "method": "next-data" | "html-scrape",
-//   "matches": [ ... ],
-//   "raw": { ... }   // only for next-data method, the full parsed object (optional, capped)
-// }
+import  * as cheerio from 'cheerio';
 
 const cheerio = require("cheerio");
 
