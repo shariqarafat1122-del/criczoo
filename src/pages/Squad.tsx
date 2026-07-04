@@ -84,22 +84,21 @@ const roleEmoji = (r?: string) => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
-   SPLIT XI vs BENCH — safe & flexible
+   SPLIT XI vs BENCH — per team, safe
    ═══════════════════════════════════════════════════════════════════════ */
 
 const splitSquad = (players: Player[]) => {
   if (!players?.length) return { xi: [] as Player[], bench: [] as Player[] };
 
-  // Priority 1: explicit playingXI flag on ANY player
+  // 1) explicit playingXI flag
   const hasXIFlag = players.some((p) => typeof p.playingXI === "boolean");
   if (hasXIFlag) {
     const xi = players.filter((p) => p.playingXI === true);
     const bench = players.filter((p) => p.playingXI === false);
-    // If flags exist but nothing matched, fall through to slice
     if (xi.length || bench.length) return { xi, bench };
   }
 
-  // Priority 2: substitute / isBench flags
+  // 2) substitute / isBench flags
   const hasSubFlag = players.some(
     (p) => p.substitute === true || p.isBench === true
   );
@@ -109,11 +108,8 @@ const splitSquad = (players: Player[]) => {
     return { xi, bench };
   }
 
-  // Fallback: first 11 as XI, rest bench
-  return {
-    xi: players.slice(0, 11),
-    bench: players.slice(11),
-  };
+  // 3) fallback: first 11 as XI
+  return { xi: players.slice(0, 11), bench: players.slice(11) };
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -161,10 +157,16 @@ const DT = {
   card: "bg-white dark:bg-[#111815] rounded-[20px] shadow-[0_1px_8px_-3px_rgba(15,23,20,0.08)] dark:shadow-[0_1px_16px_-6px_rgba(0,0,0,0.45)] border border-black/[0.04] dark:border-white/[0.06] overflow-hidden w-full",
   sectionBar:
     "flex items-center gap-2.5 px-4 sm:px-5 py-3 bg-gradient-to-r from-[#009270]/[0.06] via-[#009270]/[0.02] to-transparent dark:from-[#12b985]/[0.09] dark:via-[#12b985]/[0.03] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]",
+  benchBar:
+    "flex items-center gap-2.5 px-4 sm:px-5 py-3 bg-gradient-to-r from-gray-500/[0.06] via-gray-500/[0.02] to-transparent dark:from-gray-400/[0.08] dark:via-gray-400/[0.03] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]",
   sectionTitle:
     "text-[11px] sm:text-[11.5px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-[0.08em]",
+  benchTitle:
+    "text-[11px] sm:text-[11.5px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-[0.08em]",
   accent:
     "w-1 h-5 rounded-full bg-gradient-to-b from-[#00b884] to-[#009270] dark:from-[#3ddba4] dark:to-[#12b985] flex-shrink-0",
+  benchAccent:
+    "w-1 h-5 rounded-full bg-gradient-to-b from-gray-400 to-gray-500 dark:from-gray-500 dark:to-gray-600 flex-shrink-0",
   badge:
     "inline-flex items-center justify-center rounded-md text-[10px] font-bold leading-none",
 };
@@ -259,7 +261,6 @@ const PlayerSkel = ({ imgSz = 48 }: { imgSz?: number }) => (
 const FullSkeleton = () => (
   <div className="max-w-lg mx-auto px-3 sm:px-4 pt-3 pb-8 space-y-4">
     <Skel className="h-12 w-full !rounded-xl" />
-    <Skel className="h-11 w-full !rounded-xl" />
     <div className={DT.card}>
       <div className="px-4 py-3 flex items-center gap-2.5">
         <Skel className="h-5 w-1 !rounded-full" />
@@ -268,6 +269,13 @@ const FullSkeleton = () => (
       <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
         {Array.from({ length: 7 }).map((_, i) => <PlayerSkel key={i} />)}
       </div>
+    </div>
+    <div className={DT.card}>
+      <div className="px-4 py-3 flex items-center gap-2.5">
+        <Skel className="h-5 w-1 !rounded-full" />
+        <Skel className="h-4 w-24" />
+      </div>
+      {Array.from({ length: 4 }).map((_, i) => <PlayerSkel key={i} imgSz={42} />)}
     </div>
   </div>
 );
@@ -304,24 +312,22 @@ const ErrorView: React.FC<{ msg: string; onRetry: () => void }> = ({ msg, onRetr
   </div>
 );
 
-const EmptyView = ({ label = "No Squad Available", sub = "Squad will appear here once officially announced." }: { label?: string; sub?: string }) => (
-  <div className="max-w-lg mx-auto px-4 py-16 flex flex-col items-center gap-5">
-    <div className="relative">
-      <div className="h-28 w-28 rounded-full bg-gray-100 dark:bg-gray-800/50 flex items-center justify-center">
-        <div className="h-20 w-20 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
-          <I.Bat className="h-10 w-10 text-gray-300 dark:text-gray-600" />
-        </div>
+const EmptyBlock = ({ label, sub }: { label: string; sub: string }) => (
+  <div className={cx(DT.card, "card-enter")}>
+    <div className="px-6 py-10 flex flex-col items-center gap-3 text-center">
+      <div className="h-14 w-14 rounded-full bg-gray-100 dark:bg-gray-800/60 flex items-center justify-center">
+        <I.Bat className="h-6 w-6 text-gray-400 dark:text-gray-600" />
       </div>
-    </div>
-    <div className="text-center space-y-2">
-      <h3 className="text-lg font-bold text-gray-900 dark:text-white">{label}</h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">{sub}</p>
+      <div>
+        <h4 className="text-[14px] font-bold text-gray-900 dark:text-white">{label}</h4>
+        <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 max-w-xs leading-snug">{sub}</p>
+      </div>
     </div>
   </div>
 );
 
 /* ═══════════════════════════════════════════════════════════════════════
-   TEAM TABS (top)
+   TEAM TABS
    ═══════════════════════════════════════════════════════════════════════ */
 
 const TeamTabs: React.FC<{
@@ -350,65 +356,6 @@ const TeamTabs: React.FC<{
 );
 
 /* ═══════════════════════════════════════════════════════════════════════
-   SQUAD SUB-TABS — Playing XI / Bench per team
-   ═══════════════════════════════════════════════════════════════════════ */
-
-const SquadSubTabs: React.FC<{
-  xiCount: number;
-  benchCount: number;
-  active: "xi" | "bench";
-  onChange: (t: "xi" | "bench") => void;
-}> = ({ xiCount, benchCount, active, onChange }) => (
-  <div className="flex gap-2">
-    <button
-      onClick={() => onChange("xi")}
-      disabled={xiCount === 0}
-      className={cx(
-        "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12.5px] font-bold transition-all duration-200 border",
-        active === "xi"
-          ? "bg-white dark:bg-[#161d1a] text-[#00734f] dark:text-[#3ddba4] border-[#009270]/25 dark:border-[#3ddba4]/25 shadow-sm"
-          : "bg-transparent text-gray-600 dark:text-gray-400 border-transparent hover:bg-white/60 dark:hover:bg-white/[0.03]",
-        xiCount === 0 && "opacity-40 cursor-not-allowed"
-      )}
-    >
-      <I.Users className="h-3.5 w-3.5" />
-      Playing XI
-      <span className={cx(
-        "h-5 min-w-[22px] px-1.5 flex items-center justify-center rounded-full text-[10px] tabular-nums",
-        active === "xi"
-          ? "bg-[#009270]/[0.12] text-[#00734f] dark:bg-[#3ddba4]/[0.15] dark:text-[#3ddba4]"
-          : "bg-gray-200 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400"
-      )}>
-        {xiCount}
-      </span>
-    </button>
-
-    <button
-      onClick={() => onChange("bench")}
-      disabled={benchCount === 0}
-      className={cx(
-        "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12.5px] font-bold transition-all duration-200 border",
-        active === "bench"
-          ? "bg-white dark:bg-[#161d1a] text-[#00734f] dark:text-[#3ddba4] border-[#009270]/25 dark:border-[#3ddba4]/25 shadow-sm"
-          : "bg-transparent text-gray-600 dark:text-gray-400 border-transparent hover:bg-white/60 dark:hover:bg-white/[0.03]",
-        benchCount === 0 && "opacity-40 cursor-not-allowed"
-      )}
-    >
-      <I.Bench className="h-3.5 w-3.5" />
-      Bench
-      <span className={cx(
-        "h-5 min-w-[22px] px-1.5 flex items-center justify-center rounded-full text-[10px] tabular-nums",
-        active === "bench"
-          ? "bg-[#009270]/[0.12] text-[#00734f] dark:bg-[#3ddba4]/[0.15] dark:text-[#3ddba4]"
-          : "bg-gray-200 text-gray-500 dark:bg-white/[0.06] dark:text-gray-400"
-      )}>
-        {benchCount}
-      </span>
-    </button>
-  </div>
-);
-
-/* ═══════════════════════════════════════════════════════════════════════
    PLAYER CARD
    ═══════════════════════════════════════════════════════════════════════ */
 
@@ -416,8 +363,8 @@ const PlayerCard: React.FC<{
   player: Player;
   idx: number;
   compact?: boolean;
-  showBenchDot?: boolean;
-}> = ({ player, idx, compact = false, showBenchDot = false }) => {
+  isBench?: boolean;
+}> = ({ player, idx, compact = false, isBench = false }) => {
   const sz = compact ? 42 : 48;
   const label = roleLabel(player.role);
   const emoji = roleEmoji(player.role);
@@ -428,7 +375,9 @@ const PlayerCard: React.FC<{
         "flex items-center gap-3 sm:gap-3.5 px-4",
         compact ? "py-[12px]" : "py-[14px]",
         "transition-all duration-250 active:scale-[0.985] cursor-default group",
-        "hover:bg-[#009270]/[0.025] dark:hover:bg-[#3ddba4]/[0.035]",
+        isBench
+          ? "hover:bg-gray-500/[0.03] dark:hover:bg-white/[0.02]"
+          : "hover:bg-[#009270]/[0.025] dark:hover:bg-[#3ddba4]/[0.035]",
         idx > 0 && "border-t border-gray-100/80 dark:border-white/[0.04]"
       )}
       style={{
@@ -444,22 +393,25 @@ const PlayerCard: React.FC<{
           fallback={initials(player.name)}
           className="shadow-sm"
         />
-        {!compact && !showBenchDot && (
-          <span className="absolute -bottom-[1px] -right-[1px] h-[14px] w-[14px] rounded-full bg-white dark:bg-[#111815] flex items-center justify-center shadow-sm">
-            <span className="h-[8px] w-[8px] rounded-full bg-gradient-to-br from-[#00b884] to-[#009270]" />
-          </span>
-        )}
-        {showBenchDot && (
-          <span className="absolute -bottom-[1px] -right-[1px] h-[14px] w-[14px] rounded-full bg-white dark:bg-[#111815] flex items-center justify-center shadow-sm">
-            <span className="h-[8px] w-[8px] rounded-full bg-gray-400 dark:bg-gray-500" />
-          </span>
-        )}
+        <span className="absolute -bottom-[1px] -right-[1px] h-[14px] w-[14px] rounded-full bg-white dark:bg-[#111815] flex items-center justify-center shadow-sm">
+          <span
+            className={cx(
+              "h-[8px] w-[8px] rounded-full",
+              isBench
+                ? "bg-gray-400 dark:bg-gray-500"
+                : "bg-gradient-to-br from-[#00b884] to-[#009270]"
+            )}
+          />
+        </span>
       </div>
 
       <div className="flex-1 min-w-0">
         <span
           className={cx(
-            "block font-semibold text-gray-900 dark:text-white truncate leading-snug",
+            "block font-semibold truncate leading-snug",
+            isBench
+              ? "text-gray-700 dark:text-gray-200"
+              : "text-gray-900 dark:text-white",
             compact ? "text-[13.5px]" : "text-[14px] sm:text-[15px]"
           )}
         >
@@ -497,44 +449,7 @@ const PlayerCard: React.FC<{
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
-   PLAYER LIST WRAPPER
-   ═══════════════════════════════════════════════════════════════════════ */
-
-const PlayerList: React.FC<{
-  title: string;
-  icon: React.ReactNode;
-  players: Player[];
-  compact?: boolean;
-  showBenchDot?: boolean;
-}> = ({ title, icon, players, compact = false, showBenchDot = false }) => {
-  if (!players.length) return null;
-  return (
-    <div className={cx(DT.card, "card-enter")}>
-      <div className={DT.sectionBar}>
-        <span className={DT.accent} />
-        <span className="text-[#009270] dark:text-[#3ddba4]">{icon}</span>
-        <span className={DT.sectionTitle}>{title}</span>
-        <span className="ml-auto text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-white/[0.06] h-5 min-w-[22px] flex items-center justify-center rounded-full tabular-nums px-1.5">
-          {players.length}
-        </span>
-      </div>
-      <div>
-        {players.map((p, i) => (
-          <PlayerCard
-            key={`${p.profileId}-${i}`}
-            player={p}
-            idx={i}
-            compact={compact}
-            showBenchDot={showBenchDot}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-/* ═══════════════════════════════════════════════════════════════════════
-   TEAM BLOCK — with sub-tabs XI/Bench per team
+   TEAM BLOCK — XI + BENCH stacked together
    ═══════════════════════════════════════════════════════════════════════ */
 
 const TeamBlock: React.FC<{
@@ -542,27 +457,25 @@ const TeamBlock: React.FC<{
   teamName: string;
   teamFlag: string;
 }> = ({ players, teamName, teamFlag }) => {
-  const [subTab, setSubTab] = useState<"xi" | "bench">("xi");
   const { xi, bench } = useMemo(() => splitSquad(players), [players]);
 
-  // Reset sub-tab if switching to a team where current tab is empty
-  useEffect(() => {
-    if (subTab === "xi" && xi.length === 0 && bench.length > 0) setSubTab("bench");
-    if (subTab === "bench" && bench.length === 0 && xi.length > 0) setSubTab("xi");
-  }, [xi.length, bench.length, subTab]);
-
   if (!players.length) {
-    return <EmptyView label={`No squad announced for ${teamName}`} sub="Check back closer to match time." />;
+    return (
+      <EmptyBlock
+        label={`No squad announced for ${teamName}`}
+        sub="Squad will appear here once officially announced."
+      />
+    );
   }
 
   return (
-    <div className="space-y-3.5">
-      {/* Team header */}
+    <div className="space-y-4">
+      {/* ── Team header ── */}
       <div className="flex items-center gap-3 px-1 card-enter">
         <LazyImage
           src={teamFlag}
           alt={teamName}
-          size={38}
+          size={40}
           fallback={initials(teamName)}
           className="shadow-sm"
         />
@@ -571,46 +484,75 @@ const TeamBlock: React.FC<{
             {teamName}
           </div>
           <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-0.5 flex items-center gap-2">
-            <span>{xi.length} in Playing XI</span>
-            <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-700" />
-            <span>{bench.length} on Bench</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-[#00b884] to-[#009270]" />
+              <span>{xi.length} Playing XI</span>
+            </span>
+            {bench.length > 0 && (
+              <>
+                <span className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-gray-400 dark:bg-gray-500" />
+                  <span>{bench.length} Bench</span>
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Sub-tabs */}
-      <SquadSubTabs
-        xiCount={xi.length}
-        benchCount={bench.length}
-        active={subTab}
-        onChange={setSubTab}
-      />
+      {/* ── PLAYING XI ── */}
+      {xi.length > 0 ? (
+        <div className={cx(DT.card, "card-enter")}>
+          <div className={DT.sectionBar}>
+            <span className={DT.accent} />
+            <span className="text-[#009270] dark:text-[#3ddba4]">
+              <I.Users className="h-4 w-4" />
+            </span>
+            <span className={DT.sectionTitle}>Playing XI</span>
+            <span className="ml-auto text-[10px] font-bold text-[#00734f] dark:text-[#3ddba4] bg-[#009270]/[0.1] dark:bg-[#3ddba4]/[0.12] h-5 min-w-[22px] flex items-center justify-center rounded-full tabular-nums px-1.5">
+              {xi.length}
+            </span>
+          </div>
+          <div>
+            {xi.map((p, i) => (
+              <PlayerCard key={`xi-${p.profileId}-${i}`} player={p} idx={i} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <EmptyBlock
+          label="Playing XI not announced"
+          sub="It will appear here once the toss is completed."
+        />
+      )}
 
-      {/* Content */}
-      <div key={subTab}>
-        {subTab === "xi" && xi.length > 0 && (
-          <PlayerList
-            title="Playing XI"
-            icon={<I.Users className="h-4 w-4" />}
-            players={xi}
-          />
-        )}
-        {subTab === "bench" && bench.length > 0 && (
-          <PlayerList
-            title={`Bench — ${teamName}`}
-            icon={<I.Bench className="h-4 w-4" />}
-            players={bench}
-            compact
-            showBenchDot
-          />
-        )}
-        {subTab === "xi" && xi.length === 0 && (
-          <EmptyView label="Playing XI not announced" sub="It will appear here once the toss is completed." />
-        )}
-        {subTab === "bench" && bench.length === 0 && (
-          <EmptyView label="No bench players listed" sub={`No substitute players available for ${teamName}.`} />
-        )}
-      </div>
+      {/* ── BENCH ── */}
+      {bench.length > 0 && (
+        <div className={cx(DT.card, "card-enter")}>
+          <div className={DT.benchBar}>
+            <span className={DT.benchAccent} />
+            <span className="text-gray-500 dark:text-gray-400">
+              <I.Bench className="h-4 w-4" />
+            </span>
+            <span className={DT.benchTitle}>Bench Players</span>
+            <span className="ml-auto text-[10px] font-bold text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-white/[0.06] h-5 min-w-[22px] flex items-center justify-center rounded-full tabular-nums px-1.5">
+              {bench.length}
+            </span>
+          </div>
+          <div>
+            {bench.map((p, i) => (
+              <PlayerCard
+                key={`bench-${p.profileId}-${i}`}
+                player={p}
+                idx={i}
+                compact
+                isBench
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -711,7 +653,7 @@ export default function Squad() {
             onChange={setTab}
           />
 
-          {/* Active Team with its own XI/Bench sub-tabs */}
+          {/* Selected Team → XI + Bench stacked together */}
           <TeamBlock
             key={tab}
             players={currentPlayers}
