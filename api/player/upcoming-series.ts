@@ -10,7 +10,7 @@ function imageUrl(id?: number) {
 
 export default async function handler(req: VercelRequest,res: VercelResponse) {
   try {
-    const response = await fetch("https://www.cricbuzz.com/api/cricket-schedule/upcoming-series/international/1783441800000",{
+    const response = await fetch("https://www.cricbuzz.com/api/cricket-schedule/upcoming-series/international/1783533600000",{
       headers:{ "User-Agent":"Mozilla/5.0", Accept:"application/json" }
     });
 
