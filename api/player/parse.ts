@@ -1,21 +1,52 @@
-import  * as cheerio from 'cheerio';
+// api/scrape.ts
+// Vercel Serverless Function (TypeScript)
+// Usage: GET /api/scrape?url=https://example.com/matches
+//
+// Strategy:
+// 1. Fetch the target URL's HTML.
+// 2. If it's a Next.js page, pull out the embedded __NEXT_DATA__ JSON
+//    (this is usually the cleanest, most complete source of truth).
+// 3. Otherwise, fall back to generic HTML parsing with cheerio to find
+//    "match card"-like repeating blocks and extract text/labels/images.
 
-const cheerio = require("cheerio");
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import * as cheerio from "cheerio";
+import type { CheerioAPI } from "cheerio";
 
-module.exports = async (req, res) => {
+interface MatchResult {
+  [key: string]: unknown;
+}
+
+interface HtmlMatchResult {
+  rawText: string;
+  teamAGuess: string | null;
+  teamBGuess: string | null;
+  badges: string[];
+  images: string[];
+}
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+): Promise<void> {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
 
-  const targetUrl = req.query.url;
+  // 👇 Yahan apna URL daalo agar file ke andar hardcode karna hai.
+  // Agar ye khaali ("") rakhoge, to ?url= query param se le lega.
+  const HARDCODED_URL: string = "https://cricbuzz.com/profile/9443/tim-seifert";
+
+  const targetUrl: string | undefined =
+    HARDCODED_URL || (req.query.url as string | undefined);
 
   if (!targetUrl) {
-    res.status(400).json({ error: "Missing required query param: url" });
+    res.status(400).json({ error: "Missing url. Set HARDCODED_URL in file or pass ?url=" });
     return;
   }
 
-  let parsedUrl;
+  let parsedUrl: URL;
   try {
-    parsedUrl = new URL("https://cricbuzz.com/profile/9444/tim-seifert");
+    parsedUrl = new URL(targetUrl);
   } catch (e) {
     res.status(400).json({ error: "Invalid url" });
     return;
@@ -44,7 +75,7 @@ module.exports = async (req, res) => {
     const nextDataScript = $("#__NEXT_DATA__").html();
     if (nextDataScript) {
       try {
-        const nextData = JSON.parse(nextDataScript);
+        const nextData: unknown = JSON.parse(nextDataScript);
         const matches = extractMatchesFromNextData(nextData);
         res.status(200).json({
           source: targetUrl,
@@ -69,21 +100,24 @@ module.exports = async (req, res) => {
       matches,
     });
   } catch (err) {
-    res.status(500).json({ error: "Scrape failed", details: err.message });
+    const error = err as Error;
+    res.status(500).json({ error: "Scrape failed", details: error.message });
   }
-};
+}
 
 // -----------------------------------------------------------------
 // Recursively search parsed __NEXT_DATA__ for arrays of objects that
 // "look like" cricket matches (has team-ish and score-ish fields).
 // -----------------------------------------------------------------
-function extractMatchesFromNextData(nextData) {
-  const found = [];
-  const seen = new Set();
+function extractMatchesFromNextData(nextData: unknown): MatchResult[] {
+  const found: MatchResult[] = [];
+  const seen = new Set<string>();
 
-  const looksLikeMatch = (obj) => {
+  const looksLikeMatch = (obj: unknown): obj is Record<string, unknown> => {
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false;
-    const keys = Object.keys(obj).join(",").toLowerCase();
+    const keys = Object.keys(obj as Record<string, unknown>)
+      .join(",")
+      .toLowerCase();
     const hasTeams =
       keys.includes("team") || keys.includes("home") || keys.includes("away");
     const hasMatchish =
@@ -95,7 +129,7 @@ function extractMatchesFromNextData(nextData) {
     return hasTeams && hasMatchish;
   };
 
-  const visit = (node, depth) => {
+  const visit = (node: unknown, depth: number): void => {
     if (!node || typeof node !== "object" || depth > 12) return;
 
     if (Array.isArray(node)) {
@@ -109,12 +143,13 @@ function extractMatchesFromNextData(nextData) {
           }
         }
       }
-      node.forEach((child) => visit(child, depth + 1));
+      node.forEach((child: unknown) => visit(child, depth + 1));
       return;
     }
 
-    for (const k of Object.keys(node)) {
-      visit(node[k], depth + 1);
+    const obj = node as Record<string, unknown>;
+    for (const k of Object.keys(obj)) {
+      visit(obj[k], depth + 1);
     }
   };
 
@@ -123,8 +158,7 @@ function extractMatchesFromNextData(nextData) {
 }
 
 // Normalize an arbitrary match-shaped object into a consistent, flat shape.
-// Keeps unrecognized fields too, so nothing important is lost.
-function normalizeMatchObject(obj) {
+function normalizeMatchObject(obj: Record<string, unknown>): MatchResult {
   const flat = flattenSimpleValues(obj);
   return {
     ...flat,
@@ -132,18 +166,27 @@ function normalizeMatchObject(obj) {
   };
 }
 
-// Pulls out string/number leaf values one level deep + common nested paths,
-// without exploding huge nested structures into the top-level result.
-function flattenSimpleValues(obj) {
-  const result = {};
+// Pulls out string/number leaf values one level deep + common nested paths.
+function flattenSimpleValues(
+  obj: Record<string, unknown>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value === null || value === undefined) continue;
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
       result[key] = value;
     } else if (typeof value === "object" && !Array.isArray(value)) {
-      // one level of nesting, common for { team: { name, flag } } shapes
-      for (const [k2, v2] of Object.entries(value)) {
-        if (typeof v2 === "string" || typeof v2 === "number" || typeof v2 === "boolean") {
+      const nested = value as Record<string, unknown>;
+      for (const [k2, v2] of Object.entries(nested)) {
+        if (
+          typeof v2 === "string" ||
+          typeof v2 === "number" ||
+          typeof v2 === "boolean"
+        ) {
           result[`${key}_${k2}`] = v2;
         }
       }
@@ -152,7 +195,7 @@ function flattenSimpleValues(obj) {
   return result;
 }
 
-function safeTruncate(obj) {
+function safeTruncate(obj: unknown): unknown {
   try {
     const str = JSON.stringify(obj);
     if (str.length <= 200000) return obj;
@@ -166,46 +209,48 @@ function safeTruncate(obj) {
 // Generic HTML fallback: look for repeating "card"-like blocks and
 // pull out team names, scores, status badges, venue/date text.
 // -----------------------------------------------------------------
-function extractMatchesFromHtml($) {
-  const matches = [];
+function extractMatchesFromHtml($: CheerioAPI): HtmlMatchResult[] {
+  const matches: HtmlMatchResult[] = [];
 
-  // Heuristic: find elements whose class names hint at "card", "match", "fixture"
   const cardSelector =
     '[class*="card" i], [class*="match" i], [class*="fixture" i]';
 
-  const candidates = $(cardSelector).filter((_, el) => {
+  const candidates = $(cardSelector).filter((_: number, el: any) => {
     const text = $(el).text().trim();
-    // must contain "vs" (case-insensitive, standalone word) to look like a match card
     return /\bvs\b/i.test(text) && text.length < 2000;
   });
 
-  // De-duplicate nested matches (parent/child both matching selector)
-  const topLevel = candidates.filter((i, el) => {
+  const topLevel = candidates.filter((_i: number, el: any) => {
     const $el = $(el);
-    return $el.parents(cardSelector).filter((_, p) => candidates.is(p)).length === 0;
+    return (
+      $el
+        .parents(cardSelector)
+        .filter((_p: number, p: any) => candidates.is(p)).length === 0
+    );
   });
 
-  topLevel.each((_, el) => {
+  topLevel.each((_: number, el: any) => {
     const $el = $(el);
 
-    const images = $el
+    const images: string[] = $el
       .find("img")
-      .map((_, img) => $(img).attr("src") || $(img).attr("data-src") || null)
+      .map((_i: number, img: any) => {
+        const $img = $(img);
+        return $img.attr("src") || $img.attr("data-src") || null;
+      })
       .get()
-      .filter(Boolean);
+      .filter((src: string | null): src is string => Boolean(src));
 
-    const badgeLike = $el
-      .find('[class*="badge" i], [class*="tag" i], [class*="pill" i], [class*="status" i]')
-      .map((_, b) => $(b).text().trim())
+    const badgeLike: string[] = $el
+      .find(
+        '[class*="badge" i], [class*="tag" i], [class*="pill" i], [class*="status" i]'
+      )
+      .map((_i: number, b: any) => $(b).text().trim())
       .get()
-      .filter(Boolean);
+      .filter((b: string): boolean => Boolean(b));
 
-    const fullText = $el
-      .text()
-      .replace(/\s+/g, " ")
-      .trim();
+    const fullText = $el.text().replace(/\s+/g, " ").trim();
 
-    // Try to split around "vs" for team-ish text
     const vsMatch = fullText.match(/(.{1,60})\bvs\b(.{1,60})/i);
 
     matches.push({
