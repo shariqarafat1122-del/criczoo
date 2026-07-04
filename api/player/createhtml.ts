@@ -110,25 +110,12 @@ interface RawScheduleData {
   appIndex?: Record<string, unknown>;
 }
 
+/* ------------------------------------------------------------------------ */
+/*  Constants                                                                */
+/* ------------------------------------------------------------------------ */
 
-async function readScheduleHtml(): Promise<string> {
-  try {
-    const response = await fetch(
-      "https://www.cricbuzz.com/cricket-schedule/upcoming-series/all",
-      {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        },
-      }
-    );
-    if (!response.ok) return '';
-    return await response.text();
-  } catch {
-    return '';
-  }
-}
+const CRICBUZZ_BASE_URL = 'https://www.cricbuzz.com';
+const CRICBUZZ_IMAGE_BASE_URL = 'https://static.cricbuzz.com/a/img/v1/i1/c';
 
 /* ------------------------------------------------------------------------ */
 /*  Helper functions                                                         */
@@ -445,7 +432,7 @@ function extractMarkupFallbackDays($: cheerio.CheerioAPI): RawDayEntry[] {
 function buildDaysFromRawSchedule(raw: RawScheduleData): DayInfo[] {
   const days: DayInfo[] = [];
   const dayEntries = Array.isArray(raw.matchScheduleMap) ? raw.matchScheduleMap : [];
-  const 
+
   for (const entry of dayEntries) {
     const wrapper = entry?.scheduleAdWrapper;
     if (!wrapper || !Array.isArray(wrapper.matchScheduleList)) continue;
@@ -497,9 +484,20 @@ function buildDaysFromRawSchedule(raw: RawScheduleData): DayInfo[] {
  * excluded from the Vercel deployment bundle. Never throws; returns an
  * empty string if the embedded constant is somehow empty or unavailable.
  */
-function readScheduleHtml(): string {
+async function readScheduleHtml(): Promise<string> {
   try {
-    return SCHEDULE_HTML || '';
+    const response = await fetch(
+      "https://www.cricbuzz.com/cricket-schedule/upcoming-series/all",
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+      }
+    );
+    if (!response.ok) return '';
+    return await response.text();
   } catch {
     return '';
   }
