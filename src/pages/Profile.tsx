@@ -18,7 +18,16 @@ import {
   Hand,
   Flag,
   Cake,
+  Sun,
+  Moon,
+  Activity,
+  Users,
+  Award,
 } from "lucide-react";
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TYPES
+   ═══════════════════════════════════════════════════════════════════════ */
 
 interface RankingEntry {
   current: string;
@@ -81,6 +90,13 @@ interface PlayerProfile {
 const CAREER_TABS = ["Test", "ODI", "T20I", "IPL"] as const;
 type CareerTab = (typeof CAREER_TABS)[number];
 
+/* ═══════════════════════════════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const cx = (...c: (string | false | undefined | null)[]) =>
+  c.filter(Boolean).join(" ");
+
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -90,12 +106,13 @@ function getInitials(name: string): string {
     .join("");
 }
 
-function formIndicatorColor(score: string): string {
+function formIndicator(score: string) {
   const runs = parseInt(score, 10);
-  if (isNaN(runs)) return "bg-[#5FD3A3]";
-  if (runs >= 50) return "bg-[#5FD3A3]";
-  if (runs >= 20) return "bg-[#F2A65A]";
-  return "bg-[#E85D5D]";
+  if (isNaN(runs)) return { color: "bg-emerald-500", label: "—" };
+  if (runs >= 100) return { color: "bg-purple-500", label: "💯" };
+  if (runs >= 50) return { color: "bg-emerald-500", label: "50+" };
+  if (runs >= 20) return { color: "bg-amber-500", label: "OK" };
+  return { color: "bg-red-500", label: "Low" };
 }
 
 function AnimatedCounter({ value }: { value: string | number }) {
@@ -121,6 +138,27 @@ function AnimatedCounter({ value }: { value: string | number }) {
   return <span>{display}</span>;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS  (matches Squad / LiveMatch / UpcomingMatches)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const DT = {
+  page:
+    "min-h-screen bg-[#F5F7FA] dark:bg-[#0a0f0d] transition-colors duration-300 font-sans overflow-x-hidden",
+  card:
+    "bg-white dark:bg-[#111815] rounded-[24px] shadow-[0_2px_10px_-4px_rgba(15,23,20,0.08)] dark:shadow-[0_2px_20px_-8px_rgba(0,0,0,0.5)] border border-black/[0.05] dark:border-white/[0.06] overflow-hidden w-full",
+  sectionBar:
+    "flex items-center gap-2.5 px-4 sm:px-5 py-3 bg-gradient-to-r from-[#009270]/[0.06] via-[#009270]/[0.02] to-transparent dark:from-[#12b985]/[0.09] dark:via-[#12b985]/[0.03] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]",
+  sectionTitle:
+    "text-[11px] sm:text-[11.5px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-[0.08em]",
+  accent:
+    "w-1 h-5 rounded-full bg-gradient-to-b from-[#00b884] to-[#009270] dark:from-[#3ddba4] dark:to-[#12b985] flex-shrink-0",
+};
+
+/* ═══════════════════════════════════════════════════════════════════════
+   STICKY HEADER
+   ═══════════════════════════════════════════════════════════════════════ */
+
 function StickyHeader({
   onBack,
   onShare,
@@ -131,29 +169,33 @@ function StickyHeader({
   name?: string;
 }) {
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#0B0F14]/70 border-b border-white/[0.06]">
-      <div className="max-w-2xl mx-auto flex items-center justify-between px-4 py-3.5">
+    <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#F5F7FA]/85 dark:bg-[#0a0f0d]/85 border-b border-black/[0.05] dark:border-white/[0.06]">
+      <div className="max-w-2xl mx-auto flex items-center justify-between px-4 py-3">
         <button
           onClick={onBack}
           aria-label="Go back"
-          className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.09] active:scale-95 transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-white dark:bg-[#161d1a] border border-black/[0.05] dark:border-white/[0.06] text-gray-700 dark:text-gray-200 hover:text-[#009270] dark:hover:text-[#3ddba4] active:scale-95 transition-all"
         >
-          <ArrowLeft size={18} className="text-[#E8EDF2]" />
+          <ArrowLeft size={18} />
         </button>
-        <h1 className="font-[Space_Grotesk] text-[15px] font-medium tracking-wide text-[#E8EDF2] truncate max-w-[55%]">
+        <h1 className="text-[14px] sm:text-[15px] font-bold tracking-tight text-gray-900 dark:text-white truncate max-w-[55%]">
           {name || "Player Profile"}
         </h1>
         <button
           onClick={onShare}
           aria-label="Share profile"
-          className="w-10 h-10 rounded-full flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.09] active:scale-95 transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-white dark:bg-[#161d1a] border border-black/[0.05] dark:border-white/[0.06] text-gray-700 dark:text-gray-200 hover:text-[#009270] dark:hover:text-[#3ddba4] active:scale-95 transition-all"
         >
-          <Share2 size={17} className="text-[#E8EDF2]" />
+          <Share2 size={17} />
         </button>
       </div>
     </header>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   AVATAR
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function PlayerAvatar({
   image,
@@ -163,72 +205,122 @@ function PlayerAvatar({
   name: string;
 }) {
   const [errored, setErrored] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const showFallback = !image || errored;
+
   return (
-    <div className="relative w-[120px] h-[120px] shrink-0">
-      <div className="absolute inset-[-14px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.35)_0%,transparent_70%)] blur-xl" />
+    <div className="relative w-[124px] h-[124px] shrink-0">
+      {/* Glow */}
+      <div className="absolute inset-[-16px] rounded-full bg-[radial-gradient(circle,rgba(0,146,112,0.35)_0%,transparent_70%)] dark:bg-[radial-gradient(circle,rgba(61,219,164,0.35)_0%,transparent_70%)] blur-xl" />
+
       {showFallback ? (
-        <div className="relative w-full h-full rounded-full border-[3px] border-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.5)] bg-gradient-to-br from-[#1E3A5F] to-[#0B0F14] flex items-center justify-center">
-          <span className="font-[Space_Grotesk] text-3xl font-bold text-[#D4AF37]">
+        <div className="relative w-full h-full rounded-full border-[3px] border-white dark:border-white/10 shadow-[0_8px_28px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_28px_rgba(0,0,0,0.5)] bg-gradient-to-br from-[#00b884] to-[#009270] flex items-center justify-center">
+          <span className="text-3xl font-black text-white">
             {getInitials(name)}
           </span>
         </div>
       ) : (
-        <img
-          src={image}
-          alt={name}
-          onError={() => setErrored(true)}
-          className="relative w-full h-full rounded-full object-cover border-[3px] border-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
-        />
+        <div className="relative w-full h-full rounded-full border-[3px] border-white dark:border-white/10 shadow-[0_8px_28px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_28px_rgba(0,0,0,0.5)] overflow-hidden bg-gradient-to-br from-[#00b884]/20 to-[#009270]/20">
+          {!loaded && <div className="absolute inset-0 shimmer" />}
+          <img
+            src={image!}
+            alt={name}
+            onLoad={() => setLoaded(true)}
+            onError={() => setErrored(true)}
+            className={cx(
+              "w-full h-full object-cover transition-opacity duration-300",
+              loaded ? "opacity-100" : "opacity-0"
+            )}
+          />
+        </div>
       )}
     </div>
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   BADGES
+   ═══════════════════════════════════════════════════════════════════════ */
+
 function Badge({
   icon: Icon,
   label,
+  variant = "default",
 }: {
   icon: React.ElementType;
   label: string;
+  variant?: "default" | "captain" | "keeper";
 }) {
+  const styles = {
+    default:
+      "bg-[#009270]/[0.1] text-[#00734f] dark:bg-[#3ddba4]/[0.12] dark:text-[#3ddba4] border-[#009270]/20 dark:border-[#3ddba4]/20",
+    captain:
+      "bg-amber-500/[0.12] text-amber-700 dark:text-amber-300 border-amber-500/25",
+    keeper:
+      "bg-blue-500/[0.1] text-blue-600 dark:text-blue-300 border-blue-500/25",
+  };
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-gradient-to-r from-[#D4AF37]/20 to-[#F4E5A1]/10 border border-[#D4AF37]/30 text-[#F4E5A1]">
+    <span
+      className={cx(
+        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border",
+        styles[variant]
+      )}
+    >
       <Icon size={11} />
       {label}
     </span>
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   HERO
+   ═══════════════════════════════════════════════════════════════════════ */
+
 function PlayerHero({ data }: { data: PlayerProfile }) {
   return (
     <motion.section
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="relative overflow-hidden rounded-[24px] bg-gradient-to-b from-[#12181F] to-[#0B0F14] border border-white/[0.06] shadow-[0_20px_60px_rgba(0,0,0,0.4)] px-6 py-9 flex flex-col items-center text-center"
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className={cx(
+        DT.card,
+        "relative px-6 py-8 flex flex-col items-center text-center"
+      )}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(212,175,55,0.08)_0%,transparent_60%)]" />
+      {/* Gradient blobs */}
+      <div className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#00b884]/25 dark:bg-[#3ddba4]/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-[#009270]/20 dark:bg-[#12b985]/15 blur-3xl" />
+
       <div className="relative z-10 flex flex-col items-center gap-4">
         <PlayerAvatar image={data.playerImage} name={data.name} />
+
         <div>
-          <h2 className="font-[Space_Grotesk] text-[26px] font-bold text-[#E8EDF2] leading-tight">
+          <h2 className="text-[24px] sm:text-[26px] font-black text-gray-900 dark:text-white leading-tight tracking-tight">
             {data.name}
           </h2>
-          <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[#8B98A5] text-sm">
+          <div className="flex items-center justify-center gap-1.5 mt-1.5 text-gray-500 dark:text-gray-400 text-sm font-medium">
             <Flag size={13} />
             <span>{data.country}</span>
           </div>
         </div>
+
         <div className="flex flex-wrap items-center justify-center gap-2">
           {data.role && <Badge icon={User} label={data.role} />}
-          {data.isCaptain && <Badge icon={Trophy} label="Captain" />}
-          {data.isKeeper && <Badge icon={Hand} label="Keeper" />}
+          {data.isCaptain && (
+            <Badge icon={Trophy} label="Captain" variant="captain" />
+          )}
+          {data.isKeeper && (
+            <Badge icon={Hand} label="Wicket Keeper" variant="keeper" />
+          )}
         </div>
       </div>
     </motion.section>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   INFO CARDS
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function InfoCard({
   icon: Icon,
@@ -242,15 +334,15 @@ function InfoCard({
   return (
     <motion.div
       whileHover={{ y: -2 }}
-      className="rounded-[20px] bg-[#12181F] border border-white/[0.06] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-shadow hover:shadow-[0_8px_28px_rgba(0,0,0,0.35)]"
+      className="rounded-2xl bg-white dark:bg-[#111815] border border-black/[0.05] dark:border-white/[0.06] p-3.5 shadow-[0_1px_8px_-3px_rgba(15,23,20,0.06)] transition-shadow hover:shadow-[0_6px_20px_-6px_rgba(15,23,20,0.15)]"
     >
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#1E3A5F] flex items-center justify-center mb-3">
-        <Icon size={16} className="text-white" />
+      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#00b884] to-[#009270] flex items-center justify-center mb-2.5">
+        <Icon size={15} className="text-white" />
       </div>
-      <div className="text-[11px] uppercase tracking-wider text-[#8B98A5] font-medium mb-1">
+      <div className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-bold mb-0.5">
         {label}
       </div>
-      <div className="text-[14px] text-[#E8EDF2] font-medium leading-snug">
+      <div className="text-[13.5px] text-gray-900 dark:text-white font-semibold leading-snug">
         {value || "—"}
       </div>
     </motion.div>
@@ -263,14 +355,16 @@ function ProfileInfoGrid({ data }: { data: PlayerProfile }) {
     { icon: Cake, label: "Born", value: data.born },
     { icon: MapPin, label: "Birth Place", value: data.birthPlace },
     { icon: User, label: "Role", value: data.role },
-    { icon: Hand, label: "Batting Style", value: data.battingStyle },
-    { icon: Hand, label: "Bowling Style", value: data.bowlingStyle },
+    { icon: Hand, label: "Batting", value: data.battingStyle },
+    { icon: Hand, label: "Bowling", value: data.bowlingStyle },
     { icon: Flag, label: "Country", value: data.country },
-    ...(age ? [{ icon: Calendar, label: "Age", value: `${age} years` }] : []),
+    ...(age
+      ? [{ icon: Calendar, label: "Age", value: `${age} years` }]
+      : []),
   ];
   return (
     <section>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
         {items.map((item, i) => (
           <InfoCard key={i} {...item} />
         ))}
@@ -278,6 +372,10 @@ function ProfileInfoGrid({ data }: { data: PlayerProfile }) {
     </section>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ICC RANKINGS
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function normalizeT20i(t20i: RankingEntry | string): RankingEntry {
   if (typeof t20i === "string") return { current: t20i, best: t20i };
@@ -297,33 +395,46 @@ function RankingRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between px-4 py-3.5 rounded-2xl transition-colors ${
+      className={cx(
+        "flex items-center justify-between px-4 py-3 rounded-2xl transition-colors border",
         isTop
-          ? "bg-gradient-to-r from-[#D4AF37]/15 to-[#F4E5A1]/5 border border-[#D4AF37]/30"
-          : "bg-white/[0.02]"
-      }`}
+          ? "bg-gradient-to-r from-[#009270]/[0.08] to-transparent border-[#009270]/20 dark:border-[#3ddba4]/25"
+          : "bg-gray-50/70 dark:bg-white/[0.02] border-transparent"
+      )}
     >
-      <span className="font-[Space_Grotesk] text-sm font-medium text-[#E8EDF2] w-16">
-        {format}
-      </span>
-      <div className="flex items-center gap-8 font-[JetBrains_Mono]">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-bold text-gray-900 dark:text-white w-14">
+          {format}
+        </span>
+        {isTop && (
+          <span className="text-[9px] font-black uppercase tracking-wider bg-[#009270]/[0.15] text-[#00734f] dark:bg-[#3ddba4]/[0.15] dark:text-[#3ddba4] px-1.5 py-0.5 rounded-md">
+            Top
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-6">
         <div className="text-center">
           <div
-            className={`text-xl font-bold ${
-              isTop ? "text-[#F4E5A1]" : "text-[#E8EDF2]"
-            }`}
+            className={cx(
+              "text-xl font-black tabular-nums",
+              isTop
+                ? "text-[#00734f] dark:text-[#3ddba4]"
+                : "text-gray-900 dark:text-white"
+            )}
           >
-            <AnimatedCounter value={current === "-" ? "-" : current} />
+            {current === "-" ? "—" : (
+              <AnimatedCounter value={current} />
+            )}
           </div>
-          <div className="text-[10px] text-[#8B98A5] uppercase tracking-wide mt-0.5">
+          <div className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold mt-0.5">
             Current
           </div>
         </div>
         <div className="text-center">
-          <div className="text-xl font-bold text-[#8B98A5]">
-            <AnimatedCounter value={best === "-" ? "-" : best} />
+          <div className="text-xl font-black text-gray-400 dark:text-gray-500 tabular-nums">
+            {best === "-" ? "—" : <AnimatedCounter value={best} />}
           </div>
-          <div className="text-[10px] text-[#8B98A5] uppercase tracking-wide mt-0.5">
+          <div className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold mt-0.5">
             Best
           </div>
         </div>
@@ -345,17 +456,22 @@ function RankingCard({ rankings }: { rankings: Rankings }) {
   const topRank = numericRanks.length ? Math.min(...numericRanks) : null;
 
   return (
-    <section className="rounded-[24px] bg-[#12181F] border border-white/[0.06] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.25)]">
-      <h3 className="font-[Space_Grotesk] text-[17px] font-semibold text-[#E8EDF2] mb-4 flex items-center gap-2">
-        <Trophy size={17} className="text-[#D4AF37]" />
-        ICC Rankings
-      </h3>
-      <div className="space-y-2.5">
+    <section className={DT.card}>
+      <div className={DT.sectionBar}>
+        <span className={DT.accent} />
+        <span className="text-[#009270] dark:text-[#3ddba4]">
+          <Trophy size={16} />
+        </span>
+        <span className={DT.sectionTitle}>ICC Rankings</span>
+      </div>
+      <div className="p-3 sm:p-4 space-y-2">
         {rows.map((row) => (
           <RankingRow
             key={row.format}
             {...row}
-            isTop={parseInt(row.current, 10) === topRank && topRank !== null}
+            isTop={
+              parseInt(row.current, 10) === topRank && topRank !== null
+            }
           />
         ))}
       </div>
@@ -363,19 +479,30 @@ function RankingCard({ rankings }: { rankings: Rankings }) {
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   TEAMS
+   ═══════════════════════════════════════════════════════════════════════ */
+
 function TeamsCard({ teams }: { teams: string[] }) {
   if (!teams?.length) return null;
   return (
-    <section className="rounded-[24px] bg-[#12181F] border border-white/[0.06] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.25)]">
-      <h3 className="font-[Space_Grotesk] text-[17px] font-semibold text-[#E8EDF2] mb-4">
-        Teams
-      </h3>
-      <div className="flex flex-wrap gap-2">
+    <section className={DT.card}>
+      <div className={DT.sectionBar}>
+        <span className={DT.accent} />
+        <span className="text-[#009270] dark:text-[#3ddba4]">
+          <Users size={16} />
+        </span>
+        <span className={DT.sectionTitle}>Teams</span>
+        <span className="ml-auto text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-white/[0.06] h-5 min-w-[22px] flex items-center justify-center rounded-full tabular-nums px-1.5">
+          {teams.length}
+        </span>
+      </div>
+      <div className="p-4 flex flex-wrap gap-2">
         {teams.map((team, i) => (
           <motion.span
             key={team + i}
-            whileHover={{ scale: 1.05, y: -1 }}
-            className="px-3.5 py-1.5 rounded-full text-[13px] font-medium text-[#E8EDF2] bg-gradient-to-br from-[#1E3A5F]/60 to-white/[0.03] border border-white/[0.08] cursor-default transition-shadow hover:shadow-[0_4px_16px_rgba(212,175,55,0.15)]"
+            whileHover={{ scale: 1.04, y: -1 }}
+            className="px-3.5 py-1.5 rounded-full text-[12.5px] font-semibold text-gray-800 dark:text-gray-200 bg-gray-100/80 dark:bg-white/[0.04] border border-black/[0.05] dark:border-white/[0.06] cursor-default transition-shadow hover:shadow-[0_4px_14px_-4px_rgba(0,146,112,0.35)] hover:border-[#009270]/25 dark:hover:border-[#3ddba4]/25"
           >
             {team}
           </motion.span>
@@ -385,42 +512,62 @@ function TeamsCard({ teams }: { teams: string[] }) {
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   RECENT FORM
+   ═══════════════════════════════════════════════════════════════════════ */
+
 function RecentFormCard({ form }: { form: BattingFormEntry[] }) {
   if (!form?.length) return null;
   return (
-    <section className="rounded-[24px] bg-[#12181F] border border-white/[0.06] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.25)]">
-      <h3 className="font-[Space_Grotesk] text-[17px] font-semibold text-[#E8EDF2] mb-4">
-        Recent Form
-      </h3>
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {form.map((entry, i) => (
-          <div
-            key={i}
-            className="shrink-0 w-[140px] rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 relative overflow-hidden"
-          >
-            <div
-              className={`absolute top-0 left-0 right-0 h-[3px] ${formIndicatorColor(
-                entry.score
-              )}`}
-            />
-            <div className="font-[JetBrains_Mono] text-xl font-bold text-[#E8EDF2] mt-1.5">
-              {entry.score}
-            </div>
-            <div className="text-[13px] text-[#8B98A5] mt-1 truncate">
-              vs {entry.opponent}
-            </div>
-            <div className="flex items-center justify-between mt-3">
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#1E3A5F]/50 text-[#8FB4DB]">
-                {entry.format}
-              </span>
-              <span className="text-[10px] text-[#5C6773]">{entry.date}</span>
-            </div>
-          </div>
-        ))}
+    <section className={DT.card}>
+      <div className={DT.sectionBar}>
+        <span className={DT.accent} />
+        <span className="text-[#009270] dark:text-[#3ddba4]">
+          <Activity size={16} />
+        </span>
+        <span className={DT.sectionTitle}>Recent Form</span>
+      </div>
+      <div className="p-4">
+        <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
+          {form.map((entry, i) => {
+            const { color } = formIndicator(entry.score);
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="shrink-0 w-[144px] rounded-2xl bg-gray-50/70 dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.06] p-4 relative overflow-hidden"
+              >
+                <div
+                  className={cx("absolute top-0 left-0 right-0 h-1", color)}
+                />
+                <div className="text-2xl font-black text-gray-900 dark:text-white mt-1.5 tabular-nums">
+                  {entry.score}
+                </div>
+                <div className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 truncate font-medium">
+                  vs {entry.opponent}
+                </div>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#009270]/[0.1] dark:bg-[#3ddba4]/[0.12] text-[#00734f] dark:text-[#3ddba4]">
+                    {entry.format}
+                  </span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                    {entry.date}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CAREER SUMMARY
+   ═══════════════════════════════════════════════════════════════════════ */
 
 const STAT_LABELS: { key: keyof CareerFormatStats; label: string }[] = [
   { key: "matches", label: "Matches" },
@@ -435,9 +582,12 @@ const STAT_LABELS: { key: keyof CareerFormatStats; label: string }[] = [
   { key: "notOuts", label: "Not Outs" },
 ];
 
-function CareerSummaryCard({ summary }: { summary: CareerSummary | string }) {
+function CareerSummaryCard({
+  summary,
+}: {
+  summary: CareerSummary | string;
+}) {
   const [tab, setTab] = useState<CareerTab>("T20I");
-
   if (typeof summary === "string" || !summary) return null;
 
   const tabKeyMap: Record<CareerTab, keyof CareerSummary> = {
@@ -449,90 +599,119 @@ function CareerSummaryCard({ summary }: { summary: CareerSummary | string }) {
   const stats = summary[tabKeyMap[tab]] as CareerFormatStats | undefined;
 
   return (
-    <section className="rounded-[24px] bg-[#12181F] border border-white/[0.06] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.25)]">
-      <h3 className="font-[Space_Grotesk] text-[17px] font-semibold text-[#E8EDF2] mb-4">
-        Career Summary
-      </h3>
-      <div className="flex gap-1.5 mb-4 p-1 rounded-full bg-white/[0.03] border border-white/[0.06]">
-        {CAREER_TABS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`relative flex-1 py-2 text-[13px] font-medium rounded-full transition-colors duration-200 ${
-              tab === t ? "text-[#0B0F14]" : "text-[#8B98A5] hover:text-[#E8EDF2]"
-            }`}
-          >
-            {tab === t && (
-              <motion.div
-                layoutId="careerTabBg"
-                className="absolute inset-0 bg-gradient-to-r from-[#D4AF37] to-[#F4E5A1] rounded-full"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-              />
-            )}
-            <span className="relative z-10">{t}</span>
-          </button>
-        ))}
+    <section className={DT.card}>
+      <div className={DT.sectionBar}>
+        <span className={DT.accent} />
+        <span className="text-[#009270] dark:text-[#3ddba4]">
+          <Award size={16} />
+        </span>
+        <span className={DT.sectionTitle}>Career Summary</span>
       </div>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={tab}
-          initial={{ opacity: 0, x: 8 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -8 }}
-          transition={{ duration: 0.25 }}
-        >
-          {stats ? (
-            <div className="grid grid-cols-2 gap-2.5">
-              {STAT_LABELS.map(({ key, label }) =>
-                stats[key] !== undefined ? (
-                  <div
-                    key={key}
-                    className="rounded-xl bg-white/[0.02] px-3.5 py-2.5 flex items-center justify-between"
-                  >
-                    <span className="text-[12px] text-[#8B98A5]">{label}</span>
-                    <span className="font-[JetBrains_Mono] text-[14px] font-semibold text-[#E8EDF2]">
-                      {stats[key]}
-                    </span>
-                  </div>
-                ) : null
+
+      <div className="p-4">
+        {/* Sliding tab */}
+        <div className="relative flex gap-1 p-1 mb-4 rounded-full bg-gray-100 dark:bg-white/[0.04] border border-black/[0.05] dark:border-white/[0.06]">
+          {CAREER_TABS.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cx(
+                "relative flex-1 py-2 text-[12.5px] font-bold rounded-full transition-colors duration-200 z-10",
+                tab === t
+                  ? "text-white"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
               )}
-            </div>
-          ) : (
-            <p className="text-sm text-[#5C6773] text-center py-6">
-              No {tab} data available.
-            </p>
-          )}
-        </motion.div>
-      </AnimatePresence>
+            >
+              {tab === t && (
+                <motion.div
+                  layoutId="careerTabBg"
+                  className="absolute inset-0 bg-gradient-to-r from-[#00b884] to-[#009270] rounded-full shadow-lg shadow-[#009270]/25 -z-10"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                />
+              )}
+              <span className="relative">{t}</span>
+            </button>
+          ))}
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -8 }}
+            transition={{ duration: 0.22 }}
+          >
+            {stats ? (
+              <div className="grid grid-cols-2 gap-2">
+                {STAT_LABELS.map(({ key, label }) =>
+                  stats[key] !== undefined ? (
+                    <div
+                      key={key}
+                      className="rounded-xl bg-gray-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] px-3 py-2.5 flex items-center justify-between"
+                    >
+                      <span className="text-[11.5px] text-gray-500 dark:text-gray-400 font-medium">
+                        {label}
+                      </span>
+                      <span className="text-[14px] font-black text-gray-900 dark:text-white tabular-nums">
+                        {stats[key]}
+                      </span>
+                    </div>
+                  ) : null
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+                No {tab} data available
+              </p>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </section>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BIO
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function PlayerBioCard({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
   if (!text) return null;
   return (
-    <section className="rounded-[24px] bg-[#12181F] border border-white/[0.06] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.25)]">
-      <h3 className="font-[Space_Grotesk] text-[17px] font-semibold text-[#E8EDF2] mb-3">
-        About Player
-      </h3>
-      <p
-        className={`text-[14px] leading-relaxed text-[#B4BEC9] ${
-          expanded ? "" : "line-clamp-5"
-        }`}
-      >
-        {text}
-      </p>
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-medium text-[#D4AF37] hover:text-[#F4E5A1] transition-colors"
-      >
-        {expanded ? "Read Less" : "Read More"}
-        {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-      </button>
+    <section className={DT.card}>
+      <div className={DT.sectionBar}>
+        <span className={DT.accent} />
+        <span className="text-[#009270] dark:text-[#3ddba4]">
+          <User size={16} />
+        </span>
+        <span className={DT.sectionTitle}>About Player</span>
+      </div>
+      <div className="p-4">
+        <p
+          className={cx(
+            "text-[13.5px] leading-relaxed text-gray-700 dark:text-gray-300",
+            !expanded && "line-clamp-5"
+          )}
+        >
+          {text}
+        </p>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-3 inline-flex items-center gap-1 text-[12.5px] font-bold text-[#00734f] dark:text-[#3ddba4] hover:brightness-125 transition"
+        >
+          {expanded ? "Read Less" : "Read More"}
+          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+      </div>
     </section>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ACHIEVEMENTS TIMELINE
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function AchievementsTimeline({ data }: { data: PlayerProfile }) {
   const t20i = normalizeT20i(data.iccRankings.t20i);
@@ -544,8 +723,8 @@ function AchievementsTimeline({ data }: { data: PlayerProfile }) {
       date: latestForm.date,
     },
     t20i.best !== "-" && {
-      label: "Best Ranking",
-      detail: `T20I #${t20i.best}`,
+      label: "Best T20I Ranking",
+      detail: `Ranked #${t20i.best}`,
       date: "",
     },
   ].filter(Boolean) as { label: string; detail: string; date: string }[];
@@ -553,39 +732,49 @@ function AchievementsTimeline({ data }: { data: PlayerProfile }) {
   if (!items.length) return null;
 
   return (
-    <section className="rounded-[24px] bg-[#12181F] border border-white/[0.06] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.25)]">
-      <h3 className="font-[Space_Grotesk] text-[17px] font-semibold text-[#E8EDF2] mb-5">
-        Achievements
-      </h3>
-      <div className="relative pl-6">
-        <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gradient-to-b from-[#D4AF37] via-white/10 to-transparent" />
-        {items.map((item, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -8 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.1 }}
-            className="relative pb-6 last:pb-0"
-          >
-            <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-[#D4AF37] ring-4 ring-[#0B0F14]" />
-            <div className="text-[13px] font-semibold text-[#E8EDF2]">
-              {item.label}
-            </div>
-            <div className="text-[13px] text-[#B4BEC9] mt-0.5">
-              {item.detail}
-            </div>
-            {item.date && (
-              <div className="text-[11px] text-[#5C6773] mt-0.5">
-                {item.date}
+    <section className={DT.card}>
+      <div className={DT.sectionBar}>
+        <span className={DT.accent} />
+        <span className="text-[#009270] dark:text-[#3ddba4]">
+          <Award size={16} />
+        </span>
+        <span className={DT.sectionTitle}>Achievements</span>
+      </div>
+      <div className="p-4">
+        <div className="relative pl-6">
+          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gradient-to-b from-[#009270] via-[#009270]/30 to-transparent dark:from-[#3ddba4] dark:via-[#3ddba4]/30" />
+          {items.map((item, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -8 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08 }}
+              className="relative pb-5 last:pb-0"
+            >
+              <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-[#00b884] to-[#009270] ring-4 ring-white dark:ring-[#111815] shadow-sm" />
+              <div className="text-[13px] font-bold text-gray-900 dark:text-white">
+                {item.label}
               </div>
-            )}
-          </motion.div>
-        ))}
+              <div className="text-[13px] text-gray-600 dark:text-gray-300 mt-0.5">
+                {item.detail}
+              </div>
+              {item.date && (
+                <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                  {item.date}
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ACTION BUTTONS
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function ActionButtons({
   onCopyLink,
@@ -604,33 +793,37 @@ function ActionButtons({
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   };
+
+  const btn =
+    "flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-white dark:bg-[#111815] border border-black/[0.05] dark:border-white/[0.06] hover:border-[#009270]/25 dark:hover:border-[#3ddba4]/25 hover:shadow-[0_6px_20px_-6px_rgba(0,146,112,0.25)] active:scale-95 transition-all";
+
   return (
     <div className="grid grid-cols-3 gap-3">
-      <button
-        onClick={handleCopy}
-        className="flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-[#12181F] border border-white/[0.06] hover:bg-white/[0.05] active:scale-95 transition-all"
-      >
-        <Copy size={17} className="text-[#8FB4DB]" />
-        <span className="text-[11px] text-[#B4BEC9]">
+      <button onClick={handleCopy} className={btn}>
+        <Copy size={17} className="text-[#009270] dark:text-[#3ddba4]" />
+        <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">
           {copied ? "Copied!" : "Copy Link"}
         </span>
       </button>
-      <button
-        onClick={onOpenCricbuzz}
-        className="flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-[#12181F] border border-white/[0.06] hover:bg-white/[0.05] active:scale-95 transition-all"
-      >
-        <ExternalLink size={17} className="text-[#8FB4DB]" />
-        <span className="text-[11px] text-[#B4BEC9]">Cricbuzz</span>
+      <button onClick={onOpenCricbuzz} className={btn}>
+        <ExternalLink
+          size={17}
+          className="text-[#009270] dark:text-[#3ddba4]"
+        />
+        <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">
+          Cricbuzz
+        </span>
       </button>
-      <button
-        onClick={onFavorite}
-        className="flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-[#12181F] border border-white/[0.06] hover:bg-white/[0.05] active:scale-95 transition-all"
-      >
+      <button onClick={onFavorite} className={btn}>
         <Heart
           size={17}
-          className={isFavorite ? "text-[#E85D5D] fill-[#E85D5D]" : "text-[#8FB4DB]"}
+          className={
+            isFavorite
+              ? "text-red-500 fill-red-500"
+              : "text-[#009270] dark:text-[#3ddba4]"
+          }
         />
-        <span className="text-[11px] text-[#B4BEC9]">
+        <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">
           {isFavorite ? "Favorited" : "Favorite"}
         </span>
       </button>
@@ -638,61 +831,58 @@ function ActionButtons({
   );
 }
 
-function HeroSkeleton() {
-  return (
-    <div className="rounded-[24px] bg-[#12181F] border border-white/[0.06] px-6 py-9 flex flex-col items-center gap-4 animate-pulse">
-      <div className="w-[120px] h-[120px] rounded-full bg-white/[0.06]" />
-      <div className="w-40 h-6 rounded-full bg-white/[0.06]" />
-      <div className="w-24 h-4 rounded-full bg-white/[0.04]" />
-      <div className="w-32 h-6 rounded-full bg-white/[0.04]" />
-    </div>
-  );
-}
+/* ═══════════════════════════════════════════════════════════════════════
+   SKELETONS
+   ═══════════════════════════════════════════════════════════════════════ */
 
-function CardSkeleton({ height = "h-40" }: { height?: string }) {
-  return (
-    <div
-      className={`rounded-[24px] bg-[#12181F] border border-white/[0.06] ${height} animate-pulse`}
-    />
-  );
-}
+const Skel = ({ className }: { className?: string }) => (
+  <div className={cx("shimmer rounded-full", className)} />
+);
 
 function LoadingSkeleton() {
   return (
-    <div className="max-w-2xl mx-auto px-4 py-5 space-y-5">
-      <HeroSkeleton />
+    <div className="max-w-2xl mx-auto px-4 py-5 space-y-4">
+      <div className={cx(DT.card, "px-6 py-8 flex flex-col items-center gap-4")}>
+        <div className="w-[124px] h-[124px] rounded-full shimmer" />
+        <Skel className="h-6 w-44" />
+        <Skel className="h-4 w-24" />
+        <Skel className="h-6 w-36 !rounded-full" />
+      </div>
       <div className="grid grid-cols-2 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-[20px] bg-[#12181F] border border-white/[0.06] h-24 animate-pulse"
-          />
+          <Skel key={i} className="h-24 !rounded-2xl" />
         ))}
       </div>
-      <CardSkeleton height="h-52" />
-      <CardSkeleton height="h-32" />
-      <CardSkeleton height="h-44" />
-      <CardSkeleton height="h-64" />
+      <Skel className="h-52 !rounded-3xl" />
+      <Skel className="h-32 !rounded-3xl" />
+      <Skel className="h-44 !rounded-3xl" />
+      <Skel className="h-64 !rounded-3xl" />
     </div>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ERROR / EMPTY
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="max-w-2xl mx-auto px-6 py-24 flex flex-col items-center text-center">
-      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#E85D5D]/20 to-transparent flex items-center justify-center mb-5">
-        <RefreshCw size={28} className="text-[#E85D5D]" />
+      <div className="w-24 h-24 rounded-full bg-red-50 dark:bg-red-900/15 flex items-center justify-center mb-5">
+        <RefreshCw size={32} className="text-red-500" />
       </div>
-      <h2 className="font-[Space_Grotesk] text-xl font-semibold text-[#E8EDF2] mb-2">
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
         Unable to load player
       </h2>
-      <p className="text-sm text-[#8B98A5] mb-6 max-w-xs">
-        Something went wrong while fetching this profile. Check your connection and try again.
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-xs leading-relaxed">
+        Something went wrong while fetching this profile. Check your
+        connection and try again.
       </p>
       <button
         onClick={onRetry}
-        className="px-6 py-3 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4E5A1] text-[#0B0F14] font-medium text-sm hover:opacity-90 active:scale-95 transition-all"
+        className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#00b884] to-[#009270] text-white rounded-full text-sm font-bold shadow-lg shadow-[#009270]/25 hover:brightness-105 active:scale-95 transition"
       >
+        <RefreshCw size={15} />
         Retry
       </button>
     </div>
@@ -702,18 +892,19 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 function EmptyState({ onBack }: { onBack: () => void }) {
   return (
     <div className="max-w-2xl mx-auto px-6 py-24 flex flex-col items-center text-center">
-      <div className="w-20 h-20 rounded-full bg-white/[0.04] flex items-center justify-center mb-5">
-        <UserX size={28} className="text-[#8B98A5]" />
+      <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-white/[0.04] flex items-center justify-center mb-5">
+        <UserX size={32} className="text-gray-400 dark:text-gray-500" />
       </div>
-      <h2 className="font-[Space_Grotesk] text-xl font-semibold text-[#E8EDF2] mb-2">
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
         Player Not Found
       </h2>
-      <p className="text-sm text-[#8B98A5] mb-6 max-w-xs">
-        We couldn't find a profile matching this ID. It may have been moved or doesn't exist.
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-xs leading-relaxed">
+        We couldn't find a profile matching this ID. It may have been moved
+        or doesn't exist.
       </p>
       <button
         onClick={onBack}
-        className="px-6 py-3 rounded-full bg-white/[0.06] text-[#E8EDF2] font-medium text-sm hover:bg-white/[0.1] active:scale-95 transition-all"
+        className="px-6 py-2.5 rounded-full bg-white dark:bg-[#161d1a] border border-black/[0.05] dark:border-white/[0.06] text-gray-700 dark:text-gray-200 font-bold text-sm hover:border-[#009270]/25 dark:hover:border-[#3ddba4]/25 active:scale-95 transition"
       >
         Go Back
       </button>
@@ -721,20 +912,33 @@ function EmptyState({ onBack }: { onBack: () => void }) {
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   MAIN PAGE
+   ═══════════════════════════════════════════════════════════════════════ */
+
 export default function PlayerProfilePage() {
   const { profileId } = useParams<{ profileId: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<PlayerProfile | null>(null);
-  const [status, setStatus] = useState<"loading" | "success" | "error" | "notfound">(
-    "loading"
-  );
+  const [status, setStatus] = useState<
+    "loading" | "success" | "error" | "notfound"
+  >("loading");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  /* ── Dark mode toggle ── */
+  useEffect(() => {
+    if (darkMode) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+  }, [darkMode]);
 
   const fetchProfile = useCallback(async () => {
     if (!profileId) return;
     setStatus("loading");
     try {
-      const res = await fetch("/api/player/profile?profileId=9443/tim-seifert");
+      const res = await fetch(
+        `/api/player/profile?profileId=${profileId}`
+      );
       if (res.status === 404) {
         setStatus("notfound");
         return;
@@ -759,7 +963,10 @@ export default function PlayerProfilePage() {
     fetchProfile();
   }, [fetchProfile]);
 
-  const handleBack = () => navigate(-1);
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate("/", { replace: true });
+  };
 
   const handleShare = async () => {
     if (navigator.share && data) {
@@ -769,7 +976,7 @@ export default function PlayerProfilePage() {
           url: window.location.href,
         });
       } catch {
-        /* user cancelled */
+        /* cancelled */
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
@@ -782,7 +989,10 @@ export default function PlayerProfilePage() {
 
   const handleOpenCricbuzz = () => {
     if (profileId) {
-      window.open(`https://www.cricbuzz.com/profiles/${profileId}`, "_blank");
+      window.open(
+        `https://www.cricbuzz.com/profiles/${profileId}`,
+        "_blank"
+      );
     }
   };
 
@@ -792,15 +1002,52 @@ export default function PlayerProfilePage() {
       : data?.careerSummary?.text || "";
 
   return (
-    <div className="min-h-screen bg-[#0B0F14] bg-[radial-gradient(ellipse_at_top,rgba(30,58,95,0.15)_0%,transparent_50%)]">
-      <StickyHeader onBack={handleBack} onShare={handleShare} name={data?.name} />
+    <div className={DT.page}>
+      <style>{`
+        .shimmer {
+          background: linear-gradient(110deg, #e8e8e8 8%, #f5f5f5 18%, #e8e8e8 33%);
+          background-size: 200% 100%;
+          animation: shimmerMove 1.5s linear infinite;
+        }
+        .dark .shimmer {
+          background: linear-gradient(110deg, #1a2420 8%, #222d28 18%, #1a2420 33%);
+          background-size: 200% 100%;
+        }
+        @keyframes shimmerMove {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .line-clamp-5 {
+          display: -webkit-box;
+          -webkit-line-clamp: 5;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
+
+      <StickyHeader
+        onBack={handleBack}
+        onShare={handleShare}
+        name={data?.name}
+      />
+
+      {/* Dark mode toggle */}
+      <button
+        onClick={() => setDarkMode((d) => !d)}
+        className="fixed bottom-5 right-5 z-50 h-11 w-11 rounded-full bg-white dark:bg-[#161d1a] shadow-lg border border-black/[0.05] dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 active:scale-95 transition-transform"
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
 
       {status === "loading" && <LoadingSkeleton />}
       {status === "error" && <ErrorState onRetry={fetchProfile} />}
       {status === "notfound" && <EmptyState onBack={handleBack} />}
 
       {status === "success" && data && (
-        <main className="max-w-2xl mx-auto px-4 py-5 space-y-5 pb-10">
+        <main className="max-w-2xl mx-auto px-3 sm:px-4 py-4 space-y-4 pb-12">
           <PlayerHero data={data} />
           <ProfileInfoGrid data={data} />
           <RankingCard rankings={data.iccRankings} />
