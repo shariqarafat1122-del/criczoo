@@ -37,7 +37,7 @@ export default async function handler(
 
   // 👇 Yahan apna URL daalo agar file ke andar hardcode karna hai.
   // Agar khaali ("") rakhoge, to ?url= query param se le lega.
-  const HARDCODED_URL: string = "https://www.cricbuzz.com/cricket-schedule/upcoming-series/all";
+  const HARDCODED_URL: string = "https://www.cricbuzz.com/profiles";
 
   const targetUrl: string | undefined =
     HARDCODED_URL || (req.query.url as string | undefined);
