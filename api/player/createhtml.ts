@@ -484,7 +484,7 @@ function buildDaysFromRawSchedule(raw: RawScheduleData): DayInfo[] {
  * excluded from the Vercel deployment bundle. Never throws; returns an
  * empty string if the embedded constant is somehow empty or unavailable.
  */
-   function readScheduleHtml(): string {
+async function readScheduleHtml(): Promise<string> {
   try {
     const response = await fetch(
       "https://www.cricbuzz.com/cricket-schedule/upcoming-series/all",
@@ -534,9 +534,9 @@ function parseScheduleHtml(html: string): DayInfo[] {
 /*  Vercel Serverless Function handler                                      */
 /* ------------------------------------------------------------------------ */
 
-export default function handler(req: VercelRequest, res: VercelResponse): void {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   try {
-    const html = readScheduleHtml();
+    const html = await readScheduleHtml();
 
     if (!html) {
       const errorResponse: ApiResponse = {
@@ -545,11 +545,36 @@ export default function handler(req: VercelRequest, res: VercelResponse): void {
         totalDays: 0,
         totalMatches: 0,
         days: [],
-        error: 'Unable to locate or read the uploaded schedule HTML file.',
+        error: 'Unable to fetch the schedule page from Cricbuzz.',
       };
       res.status(200).json(errorResponse);
       return;
     }
+
+    const days = parseScheduleHtml(html);
+    const totalMatches = days.reduce((sum, day) => sum + day.totalMatches, 0);
+
+    const response: ApiResponse = {
+      success: true,
+      generatedAt: new Date().toISOString(),
+      totalDays: days.length,
+      totalMatches,
+      days,
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    const errorResponse: ApiResponse = {
+      success: false,
+      generatedAt: new Date().toISOString(),
+      totalDays: 0,
+      totalMatches: 0,
+      days: [],
+      error: error instanceof Error ? error.message : 'Unknown error while parsing schedule.',
+    };
+    res.status(200).json(errorResponse);
+  }
+}
 
     const days = parseScheduleHtml(html);
     const totalMatches = days.reduce((sum, day) => sum + day.totalMatches, 0);
