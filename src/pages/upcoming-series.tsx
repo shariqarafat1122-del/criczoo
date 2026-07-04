@@ -51,7 +51,7 @@ interface CricketScheduleData {
 
 // API Configuration
 const API_BASE_URL = 'https://criczoo.vercel.app';
-const API_ENDPOINT = '/api/player/upcoming-series';
+const API_ENDPOINT = '/api/player/createhtml';
 
 const CricketSchedule: React.FC = () => {
   const [data, setData] = useState<CricketScheduleData | null>(null);
