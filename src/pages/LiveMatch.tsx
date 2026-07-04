@@ -318,9 +318,11 @@ const BatsmanRow = ({
   batsman,
   isStriker,
 }: {
-  batsman: BatsmanInfo;
+  batsman?: BatsmanInfo;
   isStriker: boolean;
 }) => {
+  if (!batsman) return null;
+
   const sr =
     batsman.batBalls > 0
       ? ((batsman.batRuns / batsman.batBalls) * 100).toFixed(1)
@@ -737,16 +739,21 @@ export default function LiveMatch() {
                 </span>
                 <span className={titleText}>At the Crease</span>
               </div>
-              <div className="p-3 sm:p-4 space-y-2">
-                <BatsmanRow
-                  batsman={ms.batsmanStriker}
+             <div className="p-3 sm:p-4 space-y-2">
+               {ms.batsmanStriker && (
+               <BatsmanRow
+                batsman={ms.batsmanStriker}
                   isStriker={true}
-                />
-                <BatsmanRow
-                  batsman={ms.batsmanNonStriker}
-                  isStriker={false}
-                />
-              </div>
+                 />
+                )}
+
+           {ms.batsmanNonStriker && (
+             <BatsmanRow
+        batsman={ms.batsmanNonStriker}
+            isStriker={false}
+    />
+  )}
+</div>
             </div>
 
             {/* ═══ BOWLER ═══ */}
