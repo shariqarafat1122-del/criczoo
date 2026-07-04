@@ -1,6 +1,6 @@
 // api/player/profile.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { parsePlayerProfileHtml } from './parsePlayerProfile';
+import { parsePlayerProfileHtml } from '../parsePlayerProfile';
 
 export default function handler(req: VercelRequest, res: VercelResponse): void {
   try {
