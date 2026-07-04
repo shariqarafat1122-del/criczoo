@@ -734,7 +734,7 @@ export default function PlayerProfilePage() {
     if (!profileId) return;
     setStatus("loading");
     try {
-      const res = await fetch(`/api/player/profile/${profileId}`);
+      const res = await fetch(`/api/player/profile?profileId=${profileId}`);
       if (res.status === 404) {
         setStatus("notfound");
         return;
