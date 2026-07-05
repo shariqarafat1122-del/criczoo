@@ -258,10 +258,10 @@ const card =
   "bg-white dark:bg-[#111815] rounded-3xl shadow-[0_2px_10px_-4px_rgba(15,23,20,0.08)] dark:shadow-[0_2px_20px_-8px_rgba(0,0,0,0.5)] border border-black/[0.04] dark:border-white/[0.06] overflow-hidden mb-5 transition-shadow duration-300 hover:shadow-[0_8px_24px_-8px_rgba(15,23,20,0.12)] dark:hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.6)] w-full";
 
 const sectionTitle =
-  "flex items-center gap-2.5 px-3 sm:px-5 py-3 bg-gradient-to-r from-[#009270]/[0.06] via-[#009270]/[0.02] to-transparent dark:from-[#12b985]/[0.09] dark:via-[#12b985]/[0.03] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]";
+  "flex items-center gap-2.5 px-3 sm:px-5 py-3 bg-gradient-to-r from-[#0b6e46]/[0.06] via-[#0b6e46]/[0.02] to-transparent dark:from-[#0b6e46]/[0.09] dark:via-[#0b6e46]/[0.03] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]";
 
 const titleText =
-  "text-[11px] sm:text-[11.5px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-[0.08em]";
+  "text-[11px] sm:text-[11.5px] font-bold text-[#0a5c3b] dark:text-[#0b6e46] uppercase tracking-[0.08em]";
 
 const th =
   "px-2 sm:px-3.5 py-2 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider whitespace-nowrap";
@@ -272,7 +272,7 @@ const td =
 const trEven = "bg-white dark:bg-[#111815]";
 const trOdd = "bg-gray-50/70 dark:bg-white/[0.02]";
 const trHover =
-  "hover:bg-[#009270]/[0.045] dark:hover:bg-[#12b985]/[0.06] transition-colors duration-150";
+  "hover:bg-[#0b6e46]/[0.045] dark:hover:bg-[#0b6e46]/[0.06] transition-colors duration-150";
 
 const badge =
   "inline-flex items-center px-1.5 py-[1px] rounded-md text-[10px] font-bold leading-none";
@@ -382,7 +382,7 @@ const Icon = {
    ═════════════════════════════════════════════════════════════════════ */
 
 const AccentBar = () => (
-  <span className="w-1 h-5 rounded-full bg-gradient-to-b from-[#00b884] to-[#009270] dark:from-[#3ddba4] dark:to-[#12b985] flex-shrink-0" />
+  <span className="w-1 h-5 rounded-full bg-gradient-to-b from-[#0b6e46] to-[#0b6e46] dark:from-[#0b6e46] dark:to-[#0b6e46] flex-shrink-0" />
 );
 
 const Section = ({
@@ -397,7 +397,7 @@ const Section = ({
   <div className={card}>
     <div className={sectionTitle}>
       <AccentBar />
-      <span className="text-[#009270] dark:text-[#3ddba4]">{icon}</span>
+      <span className="text-[#0b6e46] dark:text-[#0b6e46]">{icon}</span>
       <span className={titleText}>{title}</span>
     </div>
     {children}
@@ -487,7 +487,7 @@ const MatchHeaderComponent = ({ mh, status }: { mh: MatchHeader; status?: string
 
   return (
     <div className="sticky top-0 z-50 bg-white/85 dark:bg-[#0a0f0d]/85 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.06] shadow-[0_1px_0_rgba(0,0,0,0.02)] w-full">
-      <div className="bg-gradient-to-r from-[#00734f] via-[#009270] to-[#00a67d] px-3 sm:px-4 py-1.5 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-[#0a5c3b] via-[#0b6e46] to-[#00a67d] px-3 sm:px-4 py-1.5 flex items-center justify-between">
         <span className="text-white/95 text-[11px] font-semibold tracking-wide truncate">
           {mh.seriesName || mh.series?.name || "Cricket Scorecard"}
         </span>
@@ -518,7 +518,7 @@ const MatchHeaderComponent = ({ mh, status }: { mh: MatchHeader; status?: string
           </div>
 
           <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
-            <span className="bg-gradient-to-br from-[#00b884] to-[#009270] text-white text-[11px] font-black px-3 py-1 rounded-full shadow-sm shadow-[#009270]/30">
+            <span className="bg-gradient-to-br from-[#0b6e46] to-[#0b6e46] text-white text-[11px] font-black px-3 py-1 rounded-full shadow-sm shadow-[#0b6e46]/30">
               VS
             </span>
             {(mh.matchDescription || mh.matchNumber) && (
@@ -552,14 +552,14 @@ const MatchHeaderComponent = ({ mh, status }: { mh: MatchHeader; status?: string
               className={cx(
                 "inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-bold px-3 py-1 rounded-full",
                 mh.complete
-                  ? "text-[#00734f] dark:text-[#3ddba4] bg-[#009270]/[0.08] dark:bg-[#3ddba4]/[0.08]"
+                  ? "text-[#0a5c3b] dark:text-[#0b6e46] bg-[#0b6e46]/[0.08] dark:bg-[#0b6e46]/[0.08]"
                   : "text-amber-700 dark:text-amber-400 bg-amber-500/[0.08]"
               )}
             >
               <span
                 className={cx(
                   "h-1.5 w-1.5 rounded-full flex-shrink-0",
-                  mh.complete ? "bg-[#009270] dark:bg-[#3ddba4]" : "bg-amber-500 animate-pulse"
+                  mh.complete ? "bg-[#0b6e46] dark:bg-[#0b6e46]" : "bg-amber-500 animate-pulse"
                 )}
               />
               {resultText}
@@ -582,7 +582,7 @@ const MatchHeaderComponent = ({ mh, status }: { mh: MatchHeader; status?: string
           </span>
         )}
         {mh.playersOfTheMatch?.[0]?.fullName && (
-          <span className="inline-flex items-center gap-1 font-semibold text-[#00734f] dark:text-[#3ddba4]">
+          <span className="inline-flex items-center gap-1 font-semibold text-[#0a5c3b] dark:text-[#0b6e46]">
             <Icon.Medal className="h-3 w-3 flex-shrink-0" />
             {mh.playersOfTheMatch[0].fullName}
           </span>
@@ -651,7 +651,7 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
     <div>
       <div className={sectionTitle}>
         <AccentBar />
-        <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Bat className="h-4 w-4" /></span>
+        <span className="text-[#0b6e46] dark:text-[#0b6e46]"><Icon.Bat className="h-4 w-4" /></span>
         <span className={titleText}>Batting</span>
       </div>
 
@@ -683,12 +683,12 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
                         className={cx(
                           "font-semibold",
                           notOut
-                            ? "text-[#00734f] dark:text-[#3ddba4]"
+                            ? "text-[#0a5c3b] dark:text-[#0b6e46]"
                             : "text-gray-800 dark:text-gray-200"
                         )}
                       >
                         {b.batName || "—"}
-                        {notOut && !dnb && <span className="text-[#00734f] dark:text-[#3ddba4] ml-0.5">*</span>}
+                        {notOut && !dnb && <span className="text-[#0a5c3b] dark:text-[#0b6e46] ml-0.5">*</span>}
                       </span>
                       {b.isCaptain && (
                         <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>C</span>
@@ -702,7 +702,7 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
                     </div>
                   </td>
                   <td className={cx(td, "text-right font-extrabold text-[14.5px] tabular-nums",
-                    notOut && !dnb ? "text-[#00734f] dark:text-[#3ddba4]"
+                    notOut && !dnb ? "text-[#0a5c3b] dark:text-[#0b6e46]"
                     : (b.runs ?? 0) === 0 ? "text-gray-400 dark:text-gray-600"
                     : "text-gray-900 dark:text-white"
                   )}>
@@ -742,7 +742,7 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
                     className={cx(
                       "text-[13px] font-semibold",
                       notOut
-                        ? "text-[#00734f] dark:text-[#3ddba4]"
+                        ? "text-[#0a5c3b] dark:text-[#0b6e46]"
                         : "text-gray-800 dark:text-gray-200"
                     )}
                   >
@@ -759,7 +759,7 @@ const BattingTable = ({ innings }: { innings: InningsData }) => {
                 <span
                   className={cx(
                     "text-lg font-black tabular-nums flex-shrink-0",
-                    notOut && !dnb ? "text-[#00734f] dark:text-[#3ddba4]"
+                    notOut && !dnb ? "text-[#0a5c3b] dark:text-[#0b6e46]"
                     : (b.runs ?? 0) === 0 ? "text-gray-400 dark:text-gray-600"
                     : "text-gray-900 dark:text-white"
                   )}
@@ -806,7 +806,7 @@ const Extras = ({ extras }: { extras: ExtrasData }) => {
   return (
     <div className="px-3 sm:px-5 py-3 bg-gray-50/60 dark:bg-white/[0.015] border-t border-black/[0.04] dark:border-white/[0.05]">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-[10px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-[#0a5c3b] dark:text-[#0b6e46] uppercase tracking-wider">
           Extras
         </span>
         <span className="font-extrabold text-gray-900 dark:text-white tabular-nums">
@@ -828,8 +828,8 @@ const Extras = ({ extras }: { extras: ExtrasData }) => {
    ═════════════════════════════════════════════════════════════════════ */
 
 const ScoreTotal = ({ score }: { score: ScoreDetails }) => (
-  <div className="px-3 sm:px-5 py-3 border-t border-black/[0.04] dark:border-white/[0.05] flex flex-wrap items-center gap-x-3 gap-y-1 bg-gradient-to-r from-[#009270]/[0.05] to-transparent dark:from-[#3ddba4]/[0.05]">
-    <span className="text-[10px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-wider">Total</span>
+  <div className="px-3 sm:px-5 py-3 border-t border-black/[0.04] dark:border-white/[0.05] flex flex-wrap items-center gap-x-3 gap-y-1 bg-gradient-to-r from-[#0b6e46]/[0.05] to-transparent dark:from-[#0b6e46]/[0.05]">
+    <span className="text-[10px] font-bold text-[#0a5c3b] dark:text-[#0b6e46] uppercase tracking-wider">Total</span>
     <span className="font-black text-gray-900 dark:text-white text-xl tabular-nums">
       {fmt(score.runs)}/{fmt(score.wickets)}
     </span>
@@ -879,7 +879,7 @@ const FallOfWickets = ({ wickets }: { wickets: Record<string, WicketData> }) => 
     <div className="border-t border-black/[0.04] dark:border-white/[0.05]">
       <div className={sectionTitle}>
         <AccentBar />
-        <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Fall className="h-4 w-4" /></span>
+        <span className="text-[#0b6e46] dark:text-[#0b6e46]"><Icon.Fall className="h-4 w-4" /></span>
         <span className={titleText}>Fall of Wickets</span>
       </div>
       <div className="px-3 sm:px-5 py-4">
@@ -887,7 +887,7 @@ const FallOfWickets = ({ wickets }: { wickets: Record<string, WicketData> }) => 
           {list.map((w, i) => (
             <div
               key={i}
-              className="relative flex flex-col items-center rounded-xl bg-white dark:bg-[#171f1b] border border-black/[0.05] dark:border-white/10 shadow-sm px-2 py-2 hover:shadow-md hover:-translate-y-0.5 hover:border-[#009270]/30 dark:hover:border-[#3ddba4]/30 transition-all duration-200"
+              className="relative flex flex-col items-center rounded-xl bg-white dark:bg-[#171f1b] border border-black/[0.05] dark:border-white/10 shadow-sm px-2 py-2 hover:shadow-md hover:-translate-y-0.5 hover:border-[#0b6e46]/30 dark:hover:border-[#0b6e46]/30 transition-all duration-200"
             >
               <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 tracking-wide">
                 WKT {w.wktNbr}
@@ -899,7 +899,7 @@ const FallOfWickets = ({ wickets }: { wickets: Record<string, WicketData> }) => 
                 <span className="text-[10px] text-gray-400 dark:text-gray-500">({fmtOvers(w.wktOver)})</span>
               )}
               {w.batName && (
-                <span className="text-[10px] sm:text-[11px] font-semibold text-[#00734f] dark:text-[#3ddba4] mt-1 break-words text-center leading-tight">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-[#0a5c3b] dark:text-[#0b6e46] mt-1 break-words text-center leading-tight">
                   {w.batName}
                 </span>
               )}
@@ -924,7 +924,7 @@ const Partnerships = ({ data }: { data: Record<string, PartnershipData> }) => {
     <div className="border-t border-black/[0.04] dark:border-white/[0.05]">
       <div className={sectionTitle}>
         <AccentBar />
-        <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Link className="h-4 w-4" /></span>
+        <span className="text-[#0b6e46] dark:text-[#0b6e46]"><Icon.Link className="h-4 w-4" /></span>
         <span className={titleText}>Partnerships</span>
       </div>
       <div className="px-3 sm:px-5 py-4 space-y-2.5">
@@ -956,7 +956,7 @@ const Partnerships = ({ data }: { data: Record<string, PartnershipData> }) => {
               </div>
               <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#00b884] to-[#009270] dark:from-[#3ddba4] dark:to-[#12b985] transition-all duration-700 ease-out"
+                  className="h-full rounded-full bg-gradient-to-r from-[#0b6e46] to-[#0b6e46] dark:from-[#0b6e46] dark:to-[#0b6e46] transition-all duration-700 ease-out"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -980,16 +980,16 @@ const Powerplay = ({ data }: { data: Record<string, PowerPlayData> }) => {
     <div className="border-t border-black/[0.04] dark:border-white/[0.05]">
       <div className={sectionTitle}>
         <AccentBar />
-        <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Bolt className="h-4 w-4" /></span>
+        <span className="text-[#0b6e46] dark:text-[#0b6e46]"><Icon.Bolt className="h-4 w-4" /></span>
         <span className={titleText}>Powerplay</span>
       </div>
       <div className="px-3 sm:px-5 py-4 flex flex-wrap gap-3">
         {list.map((pp, i) => (
           <div
             key={i}
-            className="rounded-xl bg-gradient-to-br from-[#009270]/[0.07] to-[#009270]/[0.02] dark:from-[#3ddba4]/[0.08] dark:to-[#3ddba4]/[0.02] border border-[#009270]/15 dark:border-[#3ddba4]/15 px-4 py-3 flex-1 min-w-[110px]"
+            className="rounded-xl bg-gradient-to-br from-[#0b6e46]/[0.07] to-[#0b6e46]/[0.02] dark:from-[#0b6e46]/[0.08] dark:to-[#0b6e46]/[0.02] border border-[#0b6e46]/15 dark:border-[#0b6e46]/15 px-4 py-3 flex-1 min-w-[110px]"
           >
-            <div className="text-[10px] font-bold text-[#00734f] dark:text-[#3ddba4] mb-1 uppercase tracking-wide">
+            <div className="text-[10px] font-bold text-[#0a5c3b] dark:text-[#0b6e46] mb-1 uppercase tracking-wide">
               {pp.ppType || `PP ${i + 1}`}
             </div>
             {pp.ppOversFrom !== undefined && pp.ppOversTo !== undefined && (
@@ -1023,7 +1023,7 @@ const BowlingTable = ({ innings }: { innings: InningsData }) => {
     <div className="border-t border-black/[0.04] dark:border-white/[0.05]">
       <div className={sectionTitle}>
         <AccentBar />
-        <span className="text-[#009270] dark:text-[#3ddba4]"><Icon.Ball className="h-4 w-4" /></span>
+        <span className="text-[#0b6e46] dark:text-[#0b6e46]"><Icon.Ball className="h-4 w-4" /></span>
         <span className={titleText}>Bowling</span>
         <span className="ml-0.5 text-xs text-gray-400 dark:text-gray-500 font-medium normal-case truncate">
           {innings.bowlTeamDetails?.bowlTeamName}
@@ -1059,7 +1059,7 @@ const BowlingTable = ({ innings }: { innings: InningsData }) => {
                         <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>C</span>
                       )}
                       {isTopWkt && (
-                        <span className={cx(badge, "bg-[#009270]/10 text-[#00734f] dark:bg-[#3ddba4]/10 dark:text-[#3ddba4]")}>Best</span>
+                        <span className={cx(badge, "bg-[#0b6e46]/10 text-[#0a5c3b] dark:bg-[#0b6e46]/10 dark:text-[#0b6e46]")}>Best</span>
                       )}
                     </div>
                   </td>
@@ -1067,12 +1067,12 @@ const BowlingTable = ({ innings }: { innings: InningsData }) => {
                   <td className={cx(td, "text-right tabular-nums")}>{fmt(b.maidens)}</td>
                   <td className={cx(td, "text-right tabular-nums")}>{fmt(b.runs)}</td>
                   <td className={cx(td, "text-right font-extrabold tabular-nums",
-                    isTopWkt ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-900 dark:text-white"
+                    isTopWkt ? "text-[#0a5c3b] dark:text-[#0b6e46]" : "text-gray-900 dark:text-white"
                   )}>
                     {fmt(b.wickets)}
                   </td>
                   <td className={cx(td, "text-right font-bold tabular-nums",
-                    isBestEco ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-600 dark:text-gray-300"
+                    isBestEco ? "text-[#0a5c3b] dark:text-[#0b6e46]" : "text-gray-600 dark:text-gray-300"
                   )}>
                     {fmtRate(b.economy)}
                   </td>
@@ -1106,12 +1106,12 @@ const BowlingTable = ({ innings }: { innings: InningsData }) => {
                     <span className={cx(badge, "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400")}>C</span>
                   )}
                   {isTopWkt && (
-                    <span className={cx(badge, "bg-[#009270]/10 text-[#00734f] dark:bg-[#3ddba4]/10 dark:text-[#3ddba4]")}>Best</span>
+                    <span className={cx(badge, "bg-[#0b6e46]/10 text-[#0a5c3b] dark:bg-[#0b6e46]/10 dark:text-[#0b6e46]")}>Best</span>
                   )}
                 </div>
                 <span className={cx(
                   "text-lg font-black tabular-nums flex-shrink-0",
-                  isTopWkt ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-900 dark:text-white"
+                  isTopWkt ? "text-[#0a5c3b] dark:text-[#0b6e46]" : "text-gray-900 dark:text-white"
                 )}>
                   {fmt(b.wickets)}-{fmt(b.runs)}
                 </span>
@@ -1123,7 +1123,7 @@ const BowlingTable = ({ innings }: { innings: InningsData }) => {
                 <span><span className="font-semibold text-gray-600 dark:text-gray-300">{fmt(b.maidens)}</span> m</span>
                 <span>Econ <span className={cx(
                   "font-semibold",
-                  isBestEco ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-600 dark:text-gray-300"
+                  isBestEco ? "text-[#0a5c3b] dark:text-[#0b6e46]" : "text-gray-600 dark:text-gray-300"
                 )}>{fmtRate(b.economy)}</span></span>
                 {(b.no_balls ?? 0) > 0 && <span><span className="font-semibold text-gray-600 dark:text-gray-300">{b.no_balls}</span> nb</span>}
                 {(b.wides ?? 0) > 0 && <span><span className="font-semibold text-gray-600 dark:text-gray-300">{b.wides}</span> wd</span>}
@@ -1146,10 +1146,10 @@ const InningsCard: React.FC<{ innings: InningsData }> = ({ innings }) => {
 
   return (
     <div className={cx(card, "animate-[fadeUp_0.35s_ease]")}>
-      <div className="px-3 sm:px-5 py-4 bg-gradient-to-r from-[#009270]/[0.06] via-[#009270]/[0.02] to-transparent dark:from-[#3ddba4]/[0.08] dark:via-[#3ddba4]/[0.02] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]">
+      <div className="px-3 sm:px-5 py-4 bg-gradient-to-r from-[#0b6e46]/[0.06] via-[#0b6e46]/[0.02] to-transparent dark:from-[#0b6e46]/[0.08] dark:via-[#0b6e46]/[0.02] dark:to-transparent border-b border-black/[0.04] dark:border-white/[0.05]">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-1 h-11 rounded-full bg-gradient-to-b from-[#00b884] to-[#009270] dark:from-[#3ddba4] dark:to-[#12b985] flex-shrink-0" />
+            <div className="w-1 h-11 rounded-full bg-gradient-to-b from-[#0b6e46] to-[#0b6e46] dark:from-[#0b6e46] dark:to-[#0b6e46] flex-shrink-0" />
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-extrabold text-gray-900 dark:text-white text-lg sm:text-xl tracking-tight truncate">
@@ -1167,7 +1167,7 @@ const InningsCard: React.FC<{ innings: InningsData }> = ({ innings }) => {
           {score && (
             <div className="text-right flex-shrink-0">
               <div className="flex items-baseline gap-1.5 justify-end">
-                <span className="text-2xl sm:text-3xl font-black text-[#009270] dark:text-[#3ddba4] tabular-nums">
+                <span className="text-2xl sm:text-3xl font-black text-[#0b6e46] dark:text-[#0b6e46] tabular-nums">
                   {fmt(score.runs)}/{fmt(score.wickets)}
                 </span>
                 {score.overs !== undefined && (
@@ -1240,7 +1240,7 @@ const InningsTabs: React.FC<{
               <span
                 className={cx(
                   "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider",
-                  isActive ? "text-[#00734f] dark:text-[#3ddba4]" : "text-gray-400 dark:text-gray-500"
+                  isActive ? "text-[#0a5c3b] dark:text-[#0b6e46]" : "text-gray-400 dark:text-gray-500"
                 )}
               >
                 {ORDINALS[i] ?? `${i + 1}th`} Inn
@@ -1314,7 +1314,7 @@ const PlayingXI = ({ data, mh }: { data: ScorecardResponse["playingxi"]; mh: Mat
               : `Team ${ti + 1}`;
           return (
             <div key={ti} className="p-3 sm:p-5">
-              <div className="text-[11px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-wider mb-3">
+              <div className="text-[11px] font-bold text-[#0a5c3b] dark:text-[#0b6e46] uppercase tracking-wider mb-3">
                 {teamName}
               </div>
               <ol className="space-y-2">
@@ -1366,7 +1366,7 @@ const BenchSection = ({ data, mh }: { data: ScorecardResponse["bench"]; mh: Matc
               : `Team ${ti + 1}`;
           return (
             <div key={ti} className="p-3 sm:p-5">
-              <div className="text-[11px] font-bold text-[#00734f] dark:text-[#3ddba4] uppercase tracking-wider mb-3">
+              <div className="text-[11px] font-bold text-[#0a5c3b] dark:text-[#0b6e46] uppercase tracking-wider mb-3">
                 {teamName}
               </div>
               <ul className="space-y-2">
@@ -1432,7 +1432,7 @@ const PageTabs: React.FC<{ active: PageTab; onChange: (t: PageTab) => void }> = 
               className={cx(
                  "flex-1 min-w-0 flex items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-[11px] sm:text-[13px] font-semibold transition-all",
                 isActive
-                ? "bg-gradient-to-r from-[#00b884] to-[#009270] text-white shadow-sm"
+                ? "bg-gradient-to-r from-[#0b6e46] to-[#0b6e46] text-white shadow-sm"
                 : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]"
                )}
             >
@@ -1455,7 +1455,6 @@ export default function LiveScorePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
   const [activeInnings, setActiveInnings] = useState(0);
   // TODO: default tab "live" set kiya hai kyunki Live pehla tab hai (order: Live, Scorecard, Squad)
   const [pageTab, setPageTab] = useState<PageTab>("live");
@@ -1483,11 +1482,6 @@ export default function LiveScorePage() {
   }, [fetchData]);
 
   useEffect(() => {
-    if (darkMode) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-  }, [darkMode]);
-
-  useEffect(() => {
     if (!data) return;
     if (data.isMatchComplete) return;
     const timer = setInterval(fetchData, 30_000);
@@ -1505,20 +1499,12 @@ export default function LiveScorePage() {
   const visibleInnings = useMemo(() => innings[activeInnings], [innings, activeInnings]);
 
   return (
-    <div className="min-h-screen bg-[#f2f4f3] dark:bg-[#0a0f0d] transition-colors duration-300 font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-background dark:bg-[#0a0f0d] transition-colors duration-300 font-sans overflow-x-hidden">
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(8px);} to { opacity:1; transform:translateY(0);} }
         .no-scrollbar::-webkit-scrollbar { display:none; }
         .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
       `}</style>
-
-      <button
-        onClick={() => setDarkMode((d) => !d)}
-        className="fixed bottom-5 right-5 z-50 h-11 w-11 rounded-full bg-white dark:bg-[#161d1a] shadow-[0_4px_16px_-4px_rgba(0,0,0,0.2)] border border-black/[0.05] dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 active:scale-95 transition-transform duration-200"
-        aria-label="Toggle dark mode"
-      >
-        {darkMode ? <Icon.Sun className="h-5 w-5" /> : <Icon.Moon className="h-5 w-5" />}
-      </button>
 
       {loading && !data && <Skeleton />}
 
@@ -1528,7 +1514,7 @@ export default function LiveScorePage() {
           <div className="text-center mt-4">
             <button
               onClick={fetchData}
-              className="px-5 py-2 bg-gradient-to-r from-[#00b884] to-[#009270] text-white rounded-full text-sm font-bold hover:brightness-105 active:scale-95 transition-all duration-200 shadow-sm shadow-[#009270]/30"
+              className="px-5 py-2 bg-gradient-to-r from-[#0b6e46] to-[#0b6e46] text-white rounded-full text-sm font-bold hover:brightness-105 active:scale-95 transition-all duration-200 shadow-sm shadow-[#0b6e46]/30"
             >
               Retry
             </button>
