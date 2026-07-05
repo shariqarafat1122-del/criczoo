@@ -641,6 +641,91 @@ const FilterTab = React.memo(
 FilterTab.displayName = "FilterTab";
 
 /* ─────────────────────────────────────────────
+   Bottom Navigation
+───────────────────────────────────────────── */
+type NavTab = "Home" | "Series" | "Demo1" | "Demo2";
+
+const BottomNavItem = React.memo(
+  ({
+    active,
+    icon,
+    label,
+    onClick,
+  }: {
+    active: boolean;
+    icon: string;
+    label: string;
+    onClick: () => void;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors duration-150 focus:outline-none ${
+        active
+          ? "text-emerald-600 dark:text-emerald-400"
+          : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+      }`}
+    >
+      {active && (
+        <span className="absolute top-0 w-8 h-0.5 bg-emerald-600 dark:bg-emerald-400 rounded-full" />
+      )}
+      <span
+        className={`text-lg leading-none transition-transform ${
+          active ? "scale-110" : ""
+        }`}
+      >
+        {icon}
+      </span>
+      <span
+        className={`text-[10px] font-semibold ${active ? "font-bold" : ""}`}
+      >
+        {label}
+      </span>
+    </button>
+  )
+);
+BottomNavItem.displayName = "BottomNavItem";
+
+const BottomNav = React.memo(
+  ({
+    active,
+    onChange,
+  }: {
+    active: NavTab;
+    onChange: (t: NavTab) => void;
+  }) => (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 shadow-[0_-2px_10px_rgba(0,0,0,0.04)] pb-[env(safe-area-inset-bottom)]">
+      <div className="max-w-5xl mx-auto flex items-stretch">
+        <BottomNavItem
+          active={active === "Home"}
+          icon="🏠"
+          label="Home"
+          onClick={() => onChange("Home")}
+        />
+        <BottomNavItem
+          active={active === "Series"}
+          icon="🏆"
+          label="Series"
+          onClick={() => onChange("Series")}
+        />
+        <BottomNavItem
+          active={active === "Demo1"}
+          icon="⭐"
+          label="Demo 1"
+          onClick={() => onChange("Demo1")}
+        />
+        <BottomNavItem
+          active={active === "Demo2"}
+          icon="➕"
+          label="Demo 2"
+          onClick={() => onChange("Demo2")}
+        />
+      </div>
+    </nav>
+  )
+);
+BottomNav.displayName = "BottomNav";
+
+/* ─────────────────────────────────────────────
    Main Home Page
 ───────────────────────────────────────────── */
 export default function HomePage() {
@@ -653,6 +738,7 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("All");
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<NavTab>("Home");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /* toggle dark */
@@ -699,6 +785,23 @@ export default function HomePage() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [fetchData]);
+
+  /* handle bottom nav tab change */
+  const handleTabChange = useCallback(
+    (tab: NavTab) => {
+      setActiveTab(tab);
+      if (tab === "Home") {
+        navigate("/");
+      } else if (tab === "Series") {
+        navigate("/series");
+      } else if (tab === "Demo1") {
+        navigate("/demo1");
+      } else if (tab === "Demo2") {
+        navigate("/demo2");
+      }
+    },
+    [navigate]
+  );
 
   /* all matches */
   const allMatches: MatchItem[] = useMemo(
@@ -850,7 +953,7 @@ export default function HomePage() {
       </header>
 
       {/* ─── Main ─── */}
-      <main className="max-w-5xl mx-auto px-3 sm:px-4 py-4">
+      <main className="max-w-5xl mx-auto px-3 sm:px-4 py-4 pb-20">
         {/* Loading */}
         {loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -962,6 +1065,9 @@ export default function HomePage() {
           </div>
         )}
       </main>
+
+      {/* ─── Bottom Navigation ─── */}
+      <BottomNav active={activeTab} onChange={handleTabChange} />
     </div>
   );
 }
