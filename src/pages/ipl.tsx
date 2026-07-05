@@ -98,13 +98,149 @@ interface AuctionData {
 // TODO: point this at your real backend endpoint that returns AuctionData
 const AUCTION_API_URL = "/api/ipl/auction";
 
+const DEFAULT_SORT_OPTIONS: SortOption[] = [
+  { key: "updatedAt", label: "Recently Updated", order: "desc" },
+];
+
+const EMPTY_FILTERS: Filters = {
+  countries: [],
+  roles: [],
+  caps: [],
+  statuses: [],
+  teams: [],
+};
+
+/**
+ * Normalizes a raw API payload into a safe, fully-shaped AuctionData object.
+ * This is the single choke point that guarantees every array/field the UI
+ * relies on actually exists, even if the backend returns a partial,
+ * malformed, or unexpected payload. Without this, any missing field (e.g.
+ * a null `sortOptions`, a missing `filters.teams`, a player without
+ * `editorPick` despite `isEditorPick: true`) can throw deep inside render
+ * and crash the whole page.
+ */
+function normalizeAuctionData(raw: unknown): AuctionData {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Auction data response was empty or malformed");
+  }
+  const d = raw as Partial<AuctionData>;
+
+  const asArray = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+  const asNum = (v: unknown, fallback = 0): number =>
+    typeof v === "number" && Number.isFinite(v) ? v : fallback;
+  const asStr = (v: unknown, fallback = ""): string =>
+    typeof v === "string" ? v : fallback;
+
+  const rawFilters = (d.filters ?? {}) as Partial<Filters>;
+  const filters: Filters = {
+    countries: asArray<Country>(rawFilters.countries),
+    roles: asArray<Role>(rawFilters.roles),
+    caps: asArray<CapStatus>(rawFilters.caps),
+    statuses: asArray<Status>(rawFilters.statuses),
+    teams: asArray<Team>(rawFilters.teams),
+  };
+
+  const sortOptionsRaw = asArray<Partial<SortOption>>(d.sortOptions);
+  const sortOptions: SortOption[] = sortOptionsRaw
+    .filter((o) => o && typeof o.key === "string")
+    .map((o) => ({
+      key: o.key as string,
+      label: asStr(o.label, o.key as string),
+      order: o.order === "asc" ? "asc" : "desc",
+    }));
+
+  const playersRaw = asArray<Partial<Player>>(d.players);
+  const players: Player[] = playersRaw
+    .filter((p) => p && typeof p.playerId === "number")
+    .map((p) => {
+      const isEditorPick = Boolean(p.isEditorPick) && Boolean(p.editorPick);
+      const rawPick = p.editorPick as Partial<EditorPickMeta> | undefined;
+      const editorPick: EditorPickMeta | undefined = isEditorPick
+        ? {
+            label: asStr(rawPick?.label, "Editor's Pick"),
+            tag:
+              rawPick?.tag === "SMART_BUY" ||
+              rawPick?.tag === "SURPRISE_PICK" ||
+              rawPick?.tag === "TOP_PICK"
+                ? rawPick.tag
+                : "TOP_PICK",
+            intro: asArray<string>(rawPick?.intro),
+          }
+        : undefined;
+
+      return {
+        playerId: p.playerId as number,
+        playerName: asStr(p.playerName, "Unknown Player"),
+        playerImageId: asNum(p.playerImageId),
+        countryId: asNum(p.countryId),
+        countryName: asStr(p.countryName, "—"),
+        countryImageId: asNum(p.countryImageId),
+        roleId: asNum(p.roleId),
+        role: asStr(p.role, "—"),
+        capStatus: p.capStatus === "CAPPED" ? "CAPPED" : "UNCAPPED",
+        auctionStatus:
+          p.auctionStatus === "SOLD" ||
+          p.auctionStatus === "RETAINED" ||
+          p.auctionStatus === "RTM" ||
+          p.auctionStatus === "DRAFTED"
+            ? p.auctionStatus
+            : "UNSOLD",
+        basePrice: asNum(p.basePrice),
+        finalPrice: asNum(p.finalPrice),
+        teamId: typeof p.teamId === "number" ? p.teamId : null,
+        teamName: typeof p.teamName === "string" ? p.teamName : null,
+        teamImageId: typeof p.teamImageId === "number" ? p.teamImageId : null,
+        updatedAt: asNum(p.updatedAt, Date.now()),
+        isEditorPick,
+        editorPick,
+      };
+    });
+
+  return {
+    success: Boolean(d.success),
+    auctionTitle: asStr(d.auctionTitle, "IPL Auction"),
+    auctionYear: asNum(d.auctionYear, new Date().getFullYear()),
+    auctionStatus:
+      d.auctionStatus === "PAUSED" || d.auctionStatus === "COMPLETED"
+        ? d.auctionStatus
+        : "LIVE",
+    currency: asStr(d.currency, "Cr"),
+    totalPlayers: asNum(d.totalPlayers, players.length),
+    soldPlayers: asNum(d.soldPlayers),
+    retainedPlayers: asNum(d.retainedPlayers),
+    unsoldPlayers: asNum(d.unsoldPlayers),
+    overseasPlayers: asNum(d.overseasPlayers),
+    indianPlayers: asNum(d.indianPlayers),
+    totalTeams: asNum(d.totalTeams, filters.teams.length),
+    sortOptions: sortOptions.length ? sortOptions : DEFAULT_SORT_OPTIONS,
+    filters,
+    players,
+  };
+}
+
 async function fetchAuctionData(signal?: AbortSignal): Promise<AuctionData> {
-  const res = await fetch(AUCTION_API_URL, { signal });
+  let res: Response;
+  try {
+    res = await fetch(AUCTION_API_URL, { signal });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
+    throw new Error(
+      "Couldn't reach the auction server. Check your connection and try again."
+    );
+  }
+
   if (!res.ok) {
     throw new Error(`Failed to load auction data (status ${res.status})`);
   }
-  const data: AuctionData = await res.json();
-  return data;
+
+  let json: unknown;
+  try {
+    json = await res.json();
+  } catch {
+    throw new Error("The auction server returned an invalid response.");
+  }
+
+  return normalizeAuctionData(json);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -127,7 +263,7 @@ const formatPrice = (v: number, currency: string): string =>
   v > 0 ? `₹${v.toFixed(2)} ${currency}` : "—";
 
 const initials = (n: string): string =>
-  n
+  (n ?? "")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -135,9 +271,9 @@ const initials = (n: string): string =>
     .join("");
 
 const timeAgo = (ts: number): string => {
-  const diff = Date.now() - ts;
+  const diff = Date.now() - (Number.isFinite(ts) ? ts : Date.now());
   const s = Math.floor(diff / 1000);
-  if (s < 60) return `${s}s ago`;
+  if (s < 60) return `${Math.max(s, 0)}s ago`;
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
@@ -158,6 +294,8 @@ const statusStyle = (s: Player["auctionStatus"]): string => {
       return "bg-purple-100 text-purple-700 border-purple-200";
     case "DRAFTED":
       return "bg-orange-100 text-orange-700 border-orange-200";
+    default:
+      return "bg-slate-100 text-slate-700 border-slate-200";
   }
 };
 
@@ -173,11 +311,13 @@ const statusDot = (s: Player["auctionStatus"]): string => {
       return "bg-purple-500";
     case "DRAFTED":
       return "bg-orange-500";
+    default:
+      return "bg-slate-400";
   }
 };
 
 const roleStyle = (r: string): string => {
-  const l = r.toLowerCase();
+  const l = (r ?? "").toLowerCase();
   if (l.includes("wk"))
     return "bg-sky-100 text-sky-700 border-sky-200";
   if (l.includes("all"))
@@ -204,6 +344,7 @@ const editorPickBadge = (
         emoji: "✨",
       };
     case "TOP_PICK":
+    default:
       return {
         classes:
           "bg-gradient-to-r from-amber-500 to-orange-600 text-white",
@@ -219,6 +360,8 @@ const auctionStatusBadge = (s: AuctionData["auctionStatus"]): string => {
     case "PAUSED":
       return "bg-amber-500 text-white";
     case "COMPLETED":
+      return "bg-slate-500 text-white";
+    default:
       return "bg-slate-500 text-white";
   }
 };
@@ -476,7 +619,7 @@ const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
   size = "md",
   ring = false,
 }) => {
-  const [errored, setErrored] = useState<boolean>(false);
+  const [errored, setErrored] = useState<boolean>(!playerImageId);
   const [loaded, setLoaded] = useState<boolean>(false);
   const sizes: Record<NonNullable<PlayerAvatarProps["size"]>, string> = {
     sm: "w-10 h-10 text-xs",
@@ -571,7 +714,7 @@ const CountryFlag: React.FC<CountryFlagProps> = ({
   name,
   size = "sm",
 }) => {
-  const [errored, setErrored] = useState<boolean>(false);
+  const [errored, setErrored] = useState<boolean>(!imageId);
   const sizes: Record<NonNullable<CountryFlagProps["size"]>, string> = {
     sm: "w-4 h-3",
     md: "w-6 h-4",
@@ -653,6 +796,7 @@ const EditorPickCard: React.FC<EditorPickCardProps> = ({
   const pick = player.editorPick;
   if (!pick) return null;
   const badge = editorPickBadge(pick.tag);
+  const introLines = pick.intro ?? [];
 
   return (
     <article className="relative flex-shrink-0 w-[320px] sm:w-[380px] snap-start bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl border border-slate-200 hover:border-slate-300 transition-all duration-300 hover:-translate-y-1">
@@ -764,17 +908,19 @@ const EditorPickCard: React.FC<EditorPickCardProps> = ({
         </div>
 
         {/* Intro */}
-        <ul className="mt-3 space-y-1.5">
-          {pick.intro.slice(0, 3).map((line, i) => (
-            <li
-              key={i}
-              className="flex items-start gap-2 text-[12px] text-slate-600 leading-snug"
-            >
-              <span className="mt-1 w-1.5 h-1.5 rounded-full bg-fuchsia-500 flex-shrink-0" />
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
+        {introLines.length > 0 && (
+          <ul className="mt-3 space-y-1.5">
+            {introLines.slice(0, 3).map((line, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-2 text-[12px] text-slate-600 leading-snug"
+              >
+                <span className="mt-1 w-1.5 h-1.5 rounded-full bg-fuchsia-500 flex-shrink-0" />
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </article>
   );
@@ -1051,6 +1197,72 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onClear }) => (
 );
 
 /* ═══════════════════════════════════════════════════════════════════════
+   ERROR BOUNDARY
+   Catches render-time exceptions anywhere below it (e.g. an unexpected
+   shape slipping past normalization, a third-party rendering quirk) so a
+   single bad player/field can't take down the entire page.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  onRetry: () => void;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  message: string;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, message: "" };
+  }
+
+  static getDerivedStateFromError(err: unknown): ErrorBoundaryState {
+    return {
+      hasError: true,
+      message: err instanceof Error ? err.message : "Something went wrong while rendering.",
+    };
+  }
+
+  componentDidCatch(error: unknown, info: React.ErrorInfo): void {
+    // eslint-disable-next-line no-console
+    console.error("IPLAuctionPage render error:", error, info.componentStack);
+  }
+
+  handleRetry = (): void => {
+    this.setState({ hasError: false, message: "" });
+    this.props.onRetry();
+  };
+
+  render(): React.ReactNode {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center px-4">
+          <div className="max-w-sm w-full text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-rose-100 flex items-center justify-center">
+              <I.Cross className="w-8 h-8 text-rose-500" />
+            </div>
+            <h2 className="text-lg font-black text-slate-900">
+              Something went wrong
+            </h2>
+            <p className="text-sm text-slate-500">{this.state.message}</p>
+            <button
+              onClick={this.handleRetry}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-700 transition"
+            >
+              Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    FILTER PANEL
    ═══════════════════════════════════════════════════════════════════════ */
 
@@ -1114,6 +1326,12 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     state.statuses.size +
     state.teams.size;
 
+  const countries = filters.countries ?? [];
+  const roles = filters.roles ?? [];
+  const caps = filters.caps ?? [];
+  const statuses = filters.statuses ?? [];
+  const teams = filters.teams ?? [];
+
   return (
     <>
       {/* backdrop */}
@@ -1150,125 +1368,145 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         {/* body */}
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
           {/* Country */}
-          <section>
-            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2.5">
-              Country
-            </h4>
-            <div className="flex flex-wrap gap-1.5">
-              {filters.countries.map((c) =>
-                chip(
-                  state.countries.has(c.countryId),
-                  () =>
-                    onChange({
-                      ...state,
-                      countries: toggle(state.countries, c.countryId),
-                    }),
-                  c.name,
-                  `c-${c.countryId}`
-                )
-              )}
-            </div>
-          </section>
+          {countries.length > 0 && (
+            <section>
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2.5">
+                Country
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {countries.map((c) =>
+                  chip(
+                    state.countries.has(c.countryId),
+                    () =>
+                      onChange({
+                        ...state,
+                        countries: toggle(state.countries, c.countryId),
+                      }),
+                    c.name,
+                    `c-${c.countryId}`
+                  )
+                )}
+              </div>
+            </section>
+          )}
 
           {/* Role */}
-          <section>
-            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2.5">
-              Role
-            </h4>
-            <div className="flex flex-wrap gap-1.5">
-              {filters.roles.map((r) =>
-                chip(
-                  state.roles.has(r.roleId),
-                  () =>
-                    onChange({
-                      ...state,
-                      roles: toggle(state.roles, r.roleId),
-                    }),
-                  r.name,
-                  `r-${r.roleId}`
-                )
-              )}
-            </div>
-          </section>
+          {roles.length > 0 && (
+            <section>
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2.5">
+                Role
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {roles.map((r) =>
+                  chip(
+                    state.roles.has(r.roleId),
+                    () =>
+                      onChange({
+                        ...state,
+                        roles: toggle(state.roles, r.roleId),
+                      }),
+                    r.name,
+                    `r-${r.roleId}`
+                  )
+                )}
+              </div>
+            </section>
+          )}
 
           {/* Cap */}
-          <section>
-            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2.5">
-              Cap
-            </h4>
-            <div className="flex flex-wrap gap-1.5">
-              {filters.caps.map((c) =>
-                chip(
-                  state.caps.has(c.name),
-                  () =>
-                    onChange({
-                      ...state,
-                      caps: toggle(state.caps, c.name),
-                    }),
-                  c.name,
-                  `cap-${c.capId}`
-                )
-              )}
-            </div>
-          </section>
+          {caps.length > 0 && (
+            <section>
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2.5">
+                Cap
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {caps.map((c) =>
+                  chip(
+                    state.caps.has(c.name),
+                    () =>
+                      onChange({
+                        ...state,
+                        caps: toggle(state.caps, c.name),
+                      }),
+                    c.name,
+                    `cap-${c.capId}`
+                  )
+                )}
+              </div>
+            </section>
+          )}
 
           {/* Status */}
-          <section>
-            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2.5">
-              Status
-            </h4>
-            <div className="flex flex-wrap gap-1.5">
-              {filters.statuses.map((s) =>
-                chip(
-                  state.statuses.has(s.name),
-                  () =>
-                    onChange({
-                      ...state,
-                      statuses: toggle(state.statuses, s.name),
-                    }),
-                  <span className="inline-flex items-center gap-1.5">
-                    <span
-                      className={cx(
-                        "w-1.5 h-1.5 rounded-full",
-                        statusDot(s.name as Player["auctionStatus"])
-                      )}
-                    />
-                    {s.name}
-                  </span>,
-                  `s-${s.statusId}`
-                )
-              )}
-            </div>
-          </section>
+          {statuses.length > 0 && (
+            <section>
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2.5">
+                Status
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {statuses.map((s) =>
+                  chip(
+                    state.statuses.has(s.name),
+                    () =>
+                      onChange({
+                        ...state,
+                        statuses: toggle(state.statuses, s.name),
+                      }),
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className={cx(
+                          "w-1.5 h-1.5 rounded-full",
+                          statusDot(s.name as Player["auctionStatus"])
+                        )}
+                      />
+                      {s.name}
+                    </span>,
+                    `s-${s.statusId}`
+                  )
+                )}
+              </div>
+            </section>
+          )}
 
           {/* Team */}
-          <section>
-            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2.5">
-              Team
-            </h4>
-            <div className="flex flex-wrap gap-1.5">
-              {filters.teams.map((t) =>
-                chip(
-                  state.teams.has(t.teamId),
-                  () =>
-                    onChange({
-                      ...state,
-                      teams: toggle(state.teams, t.teamId),
-                    }),
-                  <span className="inline-flex items-center gap-1.5">
-                    <TeamBadge
-                      imageId={t.teamImageId}
-                      name={t.teamName}
-                      short={t.teamShortName}
-                      size="sm"
-                    />
-                    {t.teamShortName}
-                  </span>,
-                  `t-${t.teamId}`
-                )
-              )}
-            </div>
-          </section>
+          {teams.length > 0 && (
+            <section>
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2.5">
+                Team
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {teams.map((t) =>
+                  chip(
+                    state.teams.has(t.teamId),
+                    () =>
+                      onChange({
+                        ...state,
+                        teams: toggle(state.teams, t.teamId),
+                      }),
+                    <span className="inline-flex items-center gap-1.5">
+                      <TeamBadge
+                        imageId={t.teamImageId}
+                        name={t.teamName}
+                        short={t.teamShortName}
+                        size="sm"
+                      />
+                      {t.teamShortName}
+                    </span>,
+                    `t-${t.teamId}`
+                  )
+                )}
+              </div>
+            </section>
+          )}
+
+          {countries.length === 0 &&
+            roles.length === 0 &&
+            caps.length === 0 &&
+            statuses.length === 0 &&
+            teams.length === 0 && (
+              <p className="text-sm text-slate-500 text-center py-8">
+                No filter options available.
+              </p>
+            )}
         </div>
 
         {/* footer */}
@@ -1292,10 +1530,10 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
-   MAIN PAGE
+   MAIN PAGE (inner, wrapped by ErrorBoundary below)
    ═══════════════════════════════════════════════════════════════════════ */
 
-export default function IPLAuctionPage(): React.ReactElement {
+function IPLAuctionPageInner(): React.ReactElement {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [auction, setAuction] = useState<AuctionData | null>(null);
@@ -1318,6 +1556,7 @@ export default function IPLAuctionPage(): React.ReactElement {
     fetchAuctionData(signal)
       .then((data) => {
         setAuction(data);
+        setSortIndex(0);
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -1333,24 +1572,27 @@ export default function IPLAuctionPage(): React.ReactElement {
     return () => controller.abort();
   }, [loadAuctionData]);
 
-  const activeSort = auction?.sortOptions[sortIndex] ?? { key: "updatedAt", label: "", order: "desc" as const };
+  // Safe sort options + safe active sort — the original bug lived here:
+  // `auction?.sortOptions[sortIndex]` throws if sortOptions is undefined,
+  // because optional chaining only protects the `auction` access, not the
+  // array index access that follows it.
+  const sortOptions = auction?.sortOptions ?? DEFAULT_SORT_OPTIONS;
+  const safeSortIndex =
+    sortIndex >= 0 && sortIndex < sortOptions.length ? sortIndex : 0;
+  const activeSort = sortOptions[safeSortIndex] ?? DEFAULT_SORT_OPTIONS[0];
+
+  const players = auction?.players ?? [];
 
   const editorPicks = useMemo<Player[]>(
-    () => (auction?.players ?? []).filter((p) => p.isEditorPick && p.editorPick),
-    [auction]
+    () => players.filter((p) => p.isEditorPick && p.editorPick),
+    [players]
   );
 
   const filteredPlayers = useMemo<Player[]>(() => {
-    if (!auction) return [];
     const q = search.trim().toLowerCase();
-    let list = auction.players.filter((p) => {
+    let list = players.filter((p) => {
       if (q) {
-        const hay = [
-          p.playerName,
-          p.teamName ?? "",
-          p.countryName,
-          p.role,
-        ]
+        const hay = [p.playerName, p.teamName ?? "", p.countryName, p.role]
           .join(" ")
           .toLowerCase();
         if (!hay.includes(q)) return false;
@@ -1373,11 +1615,10 @@ export default function IPLAuctionPage(): React.ReactElement {
 
     // sort
     const { key, order } = activeSort;
-    list.sort((a, b) => {
+    list = [...list].sort((a, b) => {
       const va = (a as unknown as Record<string, unknown>)[key];
       const vb = (b as unknown as Record<string, unknown>)[key];
 
-      // boolean → editor pick sort
       if (typeof va === "boolean" && typeof vb === "boolean") {
         const na = va ? 1 : 0;
         const nb = vb ? 1 : 0;
@@ -1392,7 +1633,7 @@ export default function IPLAuctionPage(): React.ReactElement {
     });
 
     return list;
-  }, [auction, search, filterState, activeSort]);
+  }, [players, search, filterState, activeSort]);
 
   const totalActiveFilters =
     filterState.countries.size +
@@ -1508,11 +1749,11 @@ export default function IPLAuctionPage(): React.ReactElement {
               <I.Sort className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <I.ChevDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <select
-                value={sortIndex}
+                value={safeSortIndex}
                 onChange={(e) => setSortIndex(Number(e.target.value))}
                 className="w-full pl-10 pr-9 py-2.5 rounded-full bg-slate-100 border border-transparent focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100 outline-none text-sm font-semibold text-slate-800 appearance-none cursor-pointer transition"
               >
-                {(auction?.sortOptions ?? []).map((opt, i) => (
+                {sortOptions.map((opt, i) => (
                   <option key={`${opt.key}-${opt.order}-${i}`} value={i}>
                     {opt.label}
                   </option>
@@ -1544,6 +1785,19 @@ export default function IPLAuctionPage(): React.ReactElement {
 
       {/* ═══ MAIN ═══ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+        {/* Non-fatal error banner: data loaded before but a refresh failed */}
+        {error && auction && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-amber-800">{error}</p>
+            <button
+              onClick={() => loadAuctionData()}
+              className="text-sm font-bold text-amber-900 underline underline-offset-2 flex-shrink-0"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* ── SUMMARY CARDS ── */}
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
           {loading || !auction ? (
@@ -1715,19 +1969,24 @@ export default function IPLAuctionPage(): React.ReactElement {
       <FilterPanel
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
-        filters={
-          auction?.filters ?? {
-            countries: [],
-            roles: [],
-            caps: [],
-            statuses: [],
-            teams: [],
-          }
-        }
+        filters={auction?.filters ?? EMPTY_FILTERS}
         state={filterState}
         onChange={setFilterState}
         onReset={resetFilters}
       />
     </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   EXPORTED PAGE (wrapped in error boundary)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+export default function IPLAuctionPage(): React.ReactElement {
+  const [boundaryKey, setBoundaryKey] = useState<number>(0);
+  return (
+    <ErrorBoundary key={boundaryKey} onRetry={() => setBoundaryKey((k) => k + 1)}>
+      <IPLAuctionPageInner />
+    </ErrorBoundary>
   );
 }
