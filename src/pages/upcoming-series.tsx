@@ -53,13 +53,74 @@ interface CricketScheduleData {
 const API_BASE_URL = 'https://criczoo.vercel.app';
 const API_ENDPOINT = '/api/player/createhtml';
 
+// Category classification
+type Category = 'All' | 'International' | 'T20 League' | 'Domestic';
+
+// Known T20 league / franchise series keywords
+const T20_LEAGUE_KEYWORDS = [
+  'ipl', 'indian premier league',
+  'bbl', 'big bash',
+  'psl', 'pakistan super league',
+  'cpl', 'caribbean premier league',
+  'the hundred',
+  'sa20',
+  'ilt20', 'international league t20',
+  'mlc', 'major league cricket',
+  'bpl', 'bangladesh premier league',
+  'lpl', 'lanka premier league',
+  'super smash',
+  'global t20',
+  't20 blast', 'vitality blast',
+  'abu dhabi t10', 't10 league',
+  'nepal premier league', 'npl',
+  'usa cricket league',
+  'women\'s premier league', 'wpl',
+];
+
+// Known international team/tour keywords (bilateral series, ICC events)
+const INTERNATIONAL_KEYWORDS = [
+  'tour of', 'in india', 'in england', 'in australia', 'in pakistan',
+  'in south africa', 'in sri lanka', 'in bangladesh', 'in new zealand',
+  'in west indies', 'in zimbabwe', 'in afghanistan', 'in ireland',
+  'in scotland', 'in netherlands', 'in uae', 'tri-series', 'tri series',
+  'world cup', 'icc', 'asia cup', 'champions trophy', 'the ashes',
+  'bilateral series',
+];
+
+// Domestic tournament keywords
+const DOMESTIC_KEYWORDS = [
+  'ranji trophy', 'ranji', 'vijay hazare', 'syed mushtaq ali',
+  'duleep trophy', 'irani cup', 'plate group', 'county championship',
+  'sheffield shield', 'plunket shield', 'super provincial',
+  'domestic', 'women\'s national', 'under-19', 'u19', 'u-19',
+  'first-class', 'list a',
+];
+
+const classifySeries = (seriesName: string, matchDesc: string): Category => {
+  const text = `${seriesName} ${matchDesc}`.toLowerCase();
+
+  if (T20_LEAGUE_KEYWORDS.some((kw) => text.includes(kw))) {
+    return 'T20 League';
+  }
+  if (DOMESTIC_KEYWORDS.some((kw) => text.includes(kw))) {
+    return 'Domestic';
+  }
+  if (INTERNATIONAL_KEYWORDS.some((kw) => text.includes(kw))) {
+    return 'International';
+  }
+  // Fallback heuristic: if series name contains "vs" between two country-like names
+  // and doesn't match league/domestic keywords, treat as International by default
+  // since most bilateral tours don't always contain "tour of" explicitly.
+  return 'International';
+};
+
 const CricketSchedule: React.FC = () => {
   const [data, setData] = useState<CricketScheduleData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeFilter, setActiveFilter] = useState<string>('All');
+  const [activeFilter, setActiveFilter] = useState<Category>('All');
 
   const fetchSchedule = async () => {
     try {
@@ -159,19 +220,32 @@ const CricketSchedule: React.FC = () => {
     return 'bg-gray-50 text-gray-600 border border-gray-200';
   };
 
-  // Count matches by status
-  const getStatusCounts = () => {
-    if (!data) return { all: 0, live: 0, upcoming: 0, completed: 0 };
-    let live = 0, upcoming = 0, completed = 0;
+  // Get category badge colors
+  const getCategoryStyle = (category: Category) => {
+    if (category === 'International') {
+      return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+    } else if (category === 'T20 League') {
+      return 'bg-amber-50 text-amber-700 border border-amber-200';
+    } else if (category === 'Domestic') {
+      return 'bg-indigo-50 text-indigo-700 border border-indigo-200';
+    }
+    return 'bg-gray-50 text-gray-600 border border-gray-200';
+  };
+
+  // Count matches by category
+  const getCategoryCounts = () => {
+    if (!data) return { All: 0, International: 0, 'T20 League': 0, Domestic: 0 };
+    let international = 0, t20League = 0, domestic = 0, total = 0;
     data.days.forEach(day => {
       day.matches.forEach(match => {
-        const s = match.status.toLowerCase();
-        if (s.includes('live')) live++;
-        else if (s.includes('upcoming') || s.includes('preview')) upcoming++;
-        else if (s.includes('complete')) completed++;
+        total++;
+        const cat = classifySeries(match.seriesName, match.matchDesc);
+        if (cat === 'International') international++;
+        else if (cat === 'T20 League') t20League++;
+        else if (cat === 'Domestic') domestic++;
       });
     });
-    return { all: data.totalMatches, live, upcoming, completed };
+    return { All: total, International: international, 'T20 League': t20League, Domestic: domestic };
   };
 
   // Filter matches
@@ -187,19 +261,19 @@ const CricketSchedule: React.FC = () => {
           match.team2.name.toLowerCase().includes(query) ||
           match.seriesName.toLowerCase().includes(query);
 
-        // Status filter
-        const s = match.status.toLowerCase();
+        // Category filter
         let matchesFilter = true;
-        if (activeFilter === 'Live') matchesFilter = s.includes('live');
-        else if (activeFilter === 'Upcoming') matchesFilter = s.includes('upcoming') || s.includes('preview');
-        else if (activeFilter === 'Completed') matchesFilter = s.includes('complete');
+        if (activeFilter !== 'All') {
+          const cat = classifySeries(match.seriesName, match.matchDesc);
+          matchesFilter = cat === activeFilter;
+        }
 
         return matchesSearch && matchesFilter;
       })
     })).filter(day => day.matches.length > 0);
   };
 
-  const counts = getStatusCounts();
+  const counts = getCategoryCounts();
   const filteredDays = getFilteredDays();
   const totalFilteredMatches = filteredDays.reduce((sum, day) => sum + day.matches.length, 0);
 
@@ -266,11 +340,11 @@ const CricketSchedule: React.FC = () => {
   if (error) return <ErrorComponent />;
   if (!data) return null;
 
-  const filters = [
-    { name: 'All', count: counts.all },
-    { name: 'Live', count: counts.live },
-    { name: 'Upcoming', count: counts.upcoming },
-    { name: 'Completed', count: counts.completed },
+  const filters: { name: Category; count: number }[] = [
+    { name: 'All', count: counts.All },
+    { name: 'International', count: counts.International },
+    { name: 'T20 League', count: counts['T20 League'] },
+    { name: 'Domestic', count: counts.Domestic },
   ];
 
   return (
@@ -284,10 +358,12 @@ const CricketSchedule: React.FC = () => {
           </div>
 
           {/* Live indicator */}
-          {counts.live > 0 && (
+          {data.days.some(d => d.matches.some(m => m.status.toLowerCase().includes('live'))) && (
             <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-emerald-200 rounded-full flex-shrink-0">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-              <span className="text-sm font-semibold text-emerald-600">{counts.live} Live</span>
+              <span className="text-sm font-semibold text-emerald-600">
+                {data.days.reduce((sum, d) => sum + d.matches.filter(m => m.status.toLowerCase().includes('live')).length, 0)} Live
+              </span>
             </div>
           )}
 
@@ -313,7 +389,7 @@ const CricketSchedule: React.FC = () => {
           </button>
         </div>
 
-        {/* Filter Tabs */}
+        {/* Filter Tabs — All / International / T20 League / Domestic */}
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
           {filters.map((filter) => (
             <button
@@ -350,94 +426,102 @@ const CricketSchedule: React.FC = () => {
         ) : (
           <div className="space-y-3">
             {filteredDays.map((day) =>
-              day.matches.map((match) => (
-                <a
-                  key={match.matchId}
-                  href={match.matchUrl}
-                  className="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100"
-                >
-                  {/* Top: Series + Badges */}
-                  <div className="flex items-start justify-between gap-3 p-4 pb-3">
-                    <h3 className="text-gray-800 font-medium text-sm flex-1">
-                      {match.seriesName}
-                    </h3>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <span className={`px-3 py-1 text-xs font-semibold rounded-md ${getFormatStyle(match.format)}`}>
-                        {match.format.toUpperCase()}
-                      </span>
-                      <span className={`px-3 py-1 text-xs font-semibold rounded-md ${getStatusStyle(match.status)}`}>
-                        {match.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Teams - Vertical Layout */}
-                  <div className="flex items-center justify-around px-4 py-3">
-                    {/* Team 1 */}
-                    <div className="flex flex-col items-center gap-2 flex-1">
-                      <div className="w-16 h-16 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
-                        <img
-                          src={match.team1.imageUrl}
-                          alt={match.team1.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${match.team1.shortName}&background=e5e7eb&color=374151`;
-                          }}
-                        />
+              day.matches.map((match) => {
+                const category = classifySeries(match.seriesName, match.matchDesc);
+                return (
+                  <a
+                    key={match.matchId}
+                    href={match.matchUrl}
+                    className="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100"
+                  >
+                    {/* Top: Series + Badges */}
+                    <div className="flex items-start justify-between gap-3 p-4 pb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-gray-800 font-medium text-sm">
+                          {match.seriesName}
+                        </h3>
+                        <span className={`inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-md ${getCategoryStyle(category)}`}>
+                          {category}
+                        </span>
                       </div>
-                      <div className="text-center">
-                        <p className="text-xs font-semibold text-gray-800">
-                          {match.team1.shortName || match.team1.name}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">Yet to bat</p>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-md ${getFormatStyle(match.format)}`}>
+                          {match.format.toUpperCase()}
+                        </span>
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-md ${getStatusStyle(match.status)}`}>
+                          {match.status}
+                        </span>
                       </div>
                     </div>
 
-                    {/* VS */}
-                    <div className="px-3">
-                      <span className="text-gray-400 text-sm font-semibold">VS</span>
+                    {/* Teams - Vertical Layout */}
+                    <div className="flex items-center justify-around px-4 py-3">
+                      {/* Team 1 */}
+                      <div className="flex flex-col items-center gap-2 flex-1">
+                        <div className="w-16 h-16 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
+                          <img
+                            src={match.team1.imageUrl}
+                            alt={match.team1.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${match.team1.shortName}&background=e5e7eb&color=374151`;
+                            }}
+                          />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs font-semibold text-gray-800">
+                            {match.team1.shortName || match.team1.name}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">Yet to bat</p>
+                        </div>
+                      </div>
+
+                      {/* VS */}
+                      <div className="px-3">
+                        <span className="text-gray-400 text-sm font-semibold">VS</span>
+                      </div>
+
+                      {/* Team 2 */}
+                      <div className="flex flex-col items-center gap-2 flex-1">
+                        <div className="w-16 h-16 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
+                          <img
+                            src={match.team2.imageUrl}
+                            alt={match.team2.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${match.team2.shortName}&background=e5e7eb&color=374151`;
+                            }}
+                          />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs font-semibold text-gray-800">
+                            {match.team2.shortName || match.team2.name}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">Yet to bat</p>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Team 2 */}
-                    <div className="flex flex-col items-center gap-2 flex-1">
-                      <div className="w-16 h-16 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
-                        <img
-                          src={match.team2.imageUrl}
-                          alt={match.team2.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${match.team2.shortName}&background=e5e7eb&color=374151`;
-                          }}
-                        />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs font-semibold text-gray-800">
-                          {match.team2.shortName || match.team2.name}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">Yet to bat</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Info Section */}
-                  <div className="bg-gray-50/70 px-4 py-3 border-t border-gray-100">
-                    <p className="text-sm font-semibold text-gray-800 mb-1.5">
-                      Match starts at {formatStartTime(match.startTimestamp)}
-                    </p>
-                    {match.venue.city && match.venue.city !== 'TBC' && (
-                      <p className="text-xs text-gray-600 flex items-center gap-1 mb-1">
-                        <span className="text-red-500">📍</span>
-                        {match.venue.city}
-                        {match.venue.ground && match.venue.ground !== match.venue.city && `, ${match.venue.ground}`}
+                    {/* Info Section */}
+                    <div className="bg-gray-50/70 px-4 py-3 border-t border-gray-100">
+                      <p className="text-sm font-semibold text-gray-800 mb-1.5">
+                        Match starts at {formatStartTime(match.startTimestamp)}
                       </p>
-                    )}
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                      <span>📅</span>
-                      {formatMatchTime(match.startTimestamp)}
-                    </p>
-                  </div>
-                </a>
-              ))
+                      {match.venue.city && match.venue.city !== 'TBC' && (
+                        <p className="text-xs text-gray-600 flex items-center gap-1 mb-1">
+                          <span className="text-red-500">📍</span>
+                          {match.venue.city}
+                          {match.venue.ground && match.venue.ground !== match.venue.city && `, ${match.venue.ground}`}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <span>📅</span>
+                        {formatMatchTime(match.startTimestamp)}
+                      </p>
+                    </div>
+                  </a>
+                );
+              })
             )}
           </div>
         )}
