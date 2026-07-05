@@ -644,7 +644,7 @@ FilterTab.displayName = "FilterTab";
 /* ─────────────────────────────────────────────
    Bottom Navigation
 ───────────────────────────────────────────── */
-type NavTab = "Home" | "Series" | "Demo1" | "Demo2";
+type NavTab = "Home" | "Series" | "IPL Auction" | "Demo2";
 
 const BottomNavItem = React.memo(
   ({
@@ -709,10 +709,10 @@ const BottomNav = React.memo(
           onClick={() => onChange("Series")}
         />
         <BottomNavItem
-          active={active === "Demo1"}
+          active={active === "IPL Auction"}
           icon="⭐"
-          label="Demo 1"
-          onClick={() => onChange("Demo1")}
+          label="IPL Auction"
+          onClick={() => onChange("IPL Auction")}
         />
         <BottomNavItem
           active={active === "Demo2"}
@@ -791,7 +791,7 @@ export default function HomePage() {
   const handleTabChange = useCallback(
     (tab: NavTab) => {
       setActiveTab(tab);
-      if (tab === "/ipl/auction") {
+      if (tab === "IPL Auction") {
         navigate("/ipl/auction");
       } else if (tab === "Demo2") {
         navigate("/demo2");
