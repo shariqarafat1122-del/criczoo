@@ -6,7 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import CricketSchedul from "./upcoming-series";
+import CricketSchedule from "./upcoming-series";
 
 /* ─────────────────────────────────────────────
    Interfaces
