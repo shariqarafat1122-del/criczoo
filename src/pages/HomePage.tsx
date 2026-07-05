@@ -871,7 +871,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors duration-300">
       {activeTab === "Series" ? (
         <div className="pb-20">
-          <Cricketschedule />
+          <CricketSchedule />
         </div>
       ) : (
         <>
