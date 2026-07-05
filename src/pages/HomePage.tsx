@@ -792,7 +792,7 @@ export default function HomePage() {
     (tab: NavTab) => {
       setActiveTab(tab);
       if (tab === "Demo1") {
-        navigate("/demo1");
+        navigate("/ipl/auction");
       } else if (tab === "Demo2") {
         navigate("/demo2");
       }
