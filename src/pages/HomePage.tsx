@@ -6,7 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import CricketSchedule from "./CricketSchedule";
+import CricketSchedul from "./upcoming-series";
 
 /* ─────────────────────────────────────────────
    Interfaces
@@ -871,7 +871,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors duration-300">
       {activeTab === "Series" ? (
         <div className="pb-20">
-          <upcoming-series />
+          <Cricketschedule />
         </div>
       ) : (
         <>
