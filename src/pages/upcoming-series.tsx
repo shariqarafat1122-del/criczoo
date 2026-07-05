@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Types
 interface Team {
@@ -115,6 +116,7 @@ const classifySeries = (seriesName: string, matchDesc: string): Category => {
 };
 
 const CricketSchedule: React.FC = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState<CricketScheduleData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -429,10 +431,17 @@ const CricketSchedule: React.FC = () => {
               day.matches.map((match) => {
                 const category = classifySeries(match.seriesName, match.matchDesc);
                 return (
-                  <a
+                  <div
                     key={match.matchId}
-                    href={match.matchUrl}
-                    className="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100"
+                    onClick={() => navigate(`/live-score/${match.matchId}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        navigate(`/live-score/${match.matchId}`);
+                      }
+                    }}
+                    className="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 cursor-pointer"
                   >
                     {/* Top: Series + Badges */}
                     <div className="flex items-start justify-between gap-3 p-4 pb-3">
@@ -519,7 +528,7 @@ const CricketSchedule: React.FC = () => {
                         {formatMatchTime(match.startTimestamp)}
                       </p>
                     </div>
-                  </a>
+                  </div>
                 );
               })
             )}
