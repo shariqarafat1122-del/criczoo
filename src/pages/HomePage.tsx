@@ -6,6 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import CricketSchedule from "./CricketSchedule";
 
 /* ─────────────────────────────────────────────
    Interfaces
@@ -790,15 +791,12 @@ export default function HomePage() {
   const handleTabChange = useCallback(
     (tab: NavTab) => {
       setActiveTab(tab);
-      if (tab === "Home") {
-        navigate("/");
-      } else if (tab === "Series") {
-        navigate("/upcoming-series");
-      } else if (tab === "Demo1") {
+      if (tab === "Demo1") {
         navigate("/demo1");
       } else if (tab === "Demo2") {
         navigate("/demo2");
       }
+      // Home and Series render inline on this same page — no navigation needed
     },
     [navigate]
   );
@@ -871,6 +869,12 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors duration-300">
+      {activeTab === "Series" ? (
+        <div className="pb-20">
+          <upcoming-series />
+        </div>
+      ) : (
+        <>
       {/* ─── App Bar ─── */}
       <header className="sticky top-0 z-50 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 shadow-sm">
         {/* Green top stripe */}
@@ -1065,6 +1069,8 @@ export default function HomePage() {
           </div>
         )}
       </main>
+        </>
+      )}
 
       {/* ─── Bottom Navigation ─── */}
       <BottomNav active={activeTab} onChange={handleTabChange} />
