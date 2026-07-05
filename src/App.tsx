@@ -22,7 +22,7 @@ export default function App() {
         <Route path="/team-squad/:matchId" element={<Squad />}/>
         <Route path="/player/:profileId/:slug" element={<PlayerProfilePage />}/>
         <Route path="/upcoming-series" element={<CricketSchedule />}/>
-        <Route path="/ipl/acution" element={<IPLAuctionPage />}/>
+        <Route path="/ipl/auction" element={<IPLAuctionPage />}/>
         
         <Route path="*" element={<HomePage />} />
       </Routes>
