@@ -7,6 +7,7 @@ import LiveTrainPage from "./pages/TrainTracking";
 import Squad from './pages/Squad';
 import PlayerProfilePage from './pages/Profile';
 import CricketSchedule from './pages/upcoming-series';
+import IPLAuctionPage from './pages/ipl';
 
 
 export default function App() {
@@ -21,6 +22,8 @@ export default function App() {
         <Route path="/team-squad/:matchId" element={<Squad />}/>
         <Route path="/player/:profileId/:slug" element={<PlayerProfilePage />}/>
         <Route path="/upcoming-series" element={<CricketSchedule />}/>
+        <Route path="/ipl/acution" element={<IPLAuctionPage />}/>
+        
         <Route path="*" element={<HomePage />} />
       </Routes>
     </BrowserRouter>
