@@ -793,7 +793,7 @@ export default function HomePage() {
       if (tab === "Home") {
         navigate("/");
       } else if (tab === "Series") {
-        navigate("/series");
+        navigate("/upcoming-series");
       } else if (tab === "Demo1") {
         navigate("/demo1");
       } else if (tab === "Demo2") {
