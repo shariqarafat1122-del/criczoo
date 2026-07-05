@@ -91,12 +91,6 @@ interface AuctionData {
   players: Player[];
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   API CONFIG
-   ═══════════════════════════════════════════════════════════════════════ */
-
-// TODO: point this at your real backend endpoint that returns AuctionData
-const AUCTION_API_URL = "/api/ipl/auction";
 
 const DEFAULT_SORT_OPTIONS: SortOption[] = [
   { key: "updatedAt", label: "Recently Updated", order: "desc" },
@@ -221,7 +215,7 @@ function normalizeAuctionData(raw: unknown): AuctionData {
 async function fetchAuctionData(signal?: AbortSignal): Promise<AuctionData> {
   let res: Response;
   try {
-    res = await fetch(AUCTION_API_URL, { signal });
+    res = await fetch("/api/ipl/auction");
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") throw err;
     throw new Error(
