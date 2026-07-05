@@ -92,566 +92,20 @@ interface AuctionData {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   MOCK DATA
+   API CONFIG
    ═══════════════════════════════════════════════════════════════════════ */
 
-const AUCTION: AuctionData = {
-  success: true,
-  auctionTitle: "IPL Auction 2026",
-  auctionYear: 2026,
-  auctionStatus: "LIVE",
-  currency: "Cr",
-  totalPlayers: 24,
-  soldPlayers: 14,
-  retainedPlayers: 4,
-  unsoldPlayers: 4,
-  overseasPlayers: 9,
-  indianPlayers: 15,
-  totalTeams: 10,
-  sortOptions: [
-    { key: "updatedAt", label: "Recent First", order: "desc" },
-    { key: "isEditorPick", label: "Editor's Picks", order: "desc" },
-    { key: "basePrice", label: "Base Price: High → Low", order: "desc" },
-    { key: "basePrice", label: "Base Price: Low → High", order: "asc" },
-    { key: "finalPrice", label: "Final Price: High → Low", order: "desc" },
-    { key: "finalPrice", label: "Final Price: Low → High", order: "asc" },
-  ],
-  filters: {
-    countries: [
-      { countryId: 1, name: "India", imageId: 226 },
-      { countryId: 2, name: "Australia", imageId: 227 },
-      { countryId: 3, name: "England", imageId: 228 },
-      { countryId: 4, name: "South Africa", imageId: 229 },
-      { countryId: 5, name: "New Zealand", imageId: 230 },
-      { countryId: 6, name: "West Indies", imageId: 231 },
-      { countryId: 7, name: "Sri Lanka", imageId: 232 },
-      { countryId: 8, name: "Afghanistan", imageId: 233 },
-    ],
-    roles: [
-      { roleId: 1, name: "Batter" },
-      { roleId: 2, name: "Bowler" },
-      { roleId: 3, name: "All-Rounder" },
-      { roleId: 4, name: "WK-Batter" },
-    ],
-    caps: [
-      { capId: 1, name: "CAPPED" },
-      { capId: 2, name: "UNCAPPED" },
-    ],
-    statuses: [
-      { statusId: 1, name: "SOLD" },
-      { statusId: 2, name: "UNSOLD" },
-      { statusId: 3, name: "RETAINED" },
-      { statusId: 4, name: "RTM" },
-      { statusId: 5, name: "DRAFTED" },
-    ],
-    teams: [
-      { teamId: 1, teamName: "Mumbai Indians", teamShortName: "MI", teamImageId: 226288 },
-      { teamId: 2, teamName: "Chennai Super Kings", teamShortName: "CSK", teamImageId: 226289 },
-      { teamId: 3, teamName: "Royal Challengers Bengaluru", teamShortName: "RCB", teamImageId: 226290 },
-      { teamId: 4, teamName: "Kolkata Knight Riders", teamShortName: "KKR", teamImageId: 226291 },
-      { teamId: 5, teamName: "Sunrisers Hyderabad", teamShortName: "SRH", teamImageId: 226292 },
-      { teamId: 6, teamName: "Delhi Capitals", teamShortName: "DC", teamImageId: 226293 },
-      { teamId: 7, teamName: "Rajasthan Royals", teamShortName: "RR", teamImageId: 226294 },
-      { teamId: 8, teamName: "Punjab Kings", teamShortName: "PBKS", teamImageId: 226295 },
-      { teamId: 9, teamName: "Gujarat Titans", teamShortName: "GT", teamImageId: 226296 },
-      { teamId: 10, teamName: "Lucknow Super Giants", teamShortName: "LSG", teamImageId: 226297 },
-    ],
-  },
-  players: [
-    {
-      playerId: 101,
-      playerName: "Rishabh Pant",
-      playerImageId: 626,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 4,
-      role: "WK-Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 2.0,
-      finalPrice: 27.0,
-      teamId: 10,
-      teamName: "Lucknow Super Giants",
-      teamImageId: 226297,
-      updatedAt: Date.now() - 1000 * 60 * 5,
-      isEditorPick: true,
-      editorPick: {
-        label: "TOP PICK",
-        tag: "TOP_PICK",
-        intro: [
-          "Most expensive buy of the auction night at ₹27 Cr",
-          "Aggressive finisher with proven big-match temperament",
-          "Adds explosive batting depth & wicket-keeping to LSG",
-        ],
-      },
-    },
-    {
-      playerId: 102,
-      playerName: "Shreyas Iyer",
-      playerImageId: 627,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 1,
-      role: "Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 2.0,
-      finalPrice: 26.75,
-      teamId: 8,
-      teamName: "Punjab Kings",
-      teamImageId: 226295,
-      updatedAt: Date.now() - 1000 * 60 * 15,
-      isEditorPick: true,
-      editorPick: {
-        label: "SMART BUY",
-        tag: "SMART_BUY",
-        intro: [
-          "IPL-winning captain, natural leadership fit for PBKS",
-          "Dominant vs spin, key middle-order anchor",
-          "Provides tactical clarity and player-management edge",
-        ],
-      },
-    },
-    {
-      playerId: 103,
-      playerName: "Jos Buttler",
-      playerImageId: 628,
-      countryId: 3,
-      countryName: "England",
-      countryImageId: 228,
-      roleId: 4,
-      role: "WK-Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 2.0,
-      finalPrice: 15.75,
-      teamId: 9,
-      teamName: "Gujarat Titans",
-      teamImageId: 226296,
-      updatedAt: Date.now() - 1000 * 60 * 45,
-      isEditorPick: true,
-      editorPick: {
-        label: "SURPRISE PICK",
-        tag: "SURPRISE_PICK",
-        intro: [
-          "Global T20 superstar switches franchise to GT",
-          "Powerplay wrecker with best-in-class strike rate",
-          "Ideal replacement for departing overseas openers",
-        ],
-      },
-    },
-    {
-      playerId: 104,
-      playerName: "David Miller",
-      playerImageId: 629,
-      countryId: 4,
-      countryName: "South Africa",
-      countryImageId: 229,
-      roleId: 1,
-      role: "Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 1.5,
-      finalPrice: 7.5,
-      teamId: 10,
-      teamName: "Lucknow Super Giants",
-      teamImageId: 226297,
-      updatedAt: Date.now() - 1000 * 60 * 90,
-      isEditorPick: false,
-    },
-    {
-      playerId: 105,
-      playerName: "Mitchell Starc",
-      playerImageId: 630,
-      countryId: 2,
-      countryName: "Australia",
-      countryImageId: 227,
-      roleId: 2,
-      role: "Bowler",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 2.0,
-      finalPrice: 22.5,
-      teamId: 4,
-      teamName: "Kolkata Knight Riders",
-      teamImageId: 226291,
-      updatedAt: Date.now() - 1000 * 60 * 120,
-      isEditorPick: true,
-      editorPick: {
-        label: "TOP PICK",
-        tag: "TOP_PICK",
-        intro: [
-          "World-class left-arm pacer for KKR's spearhead role",
-          "Death-overs specialist with elite yorker execution",
-          "Big-money marquee buy signals title intent",
-        ],
-      },
-    },
-    {
-      playerId: 106,
-      playerName: "Kane Williamson",
-      playerImageId: 631,
-      countryId: 5,
-      countryName: "New Zealand",
-      countryImageId: 230,
-      roleId: 1,
-      role: "Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "UNSOLD",
-      basePrice: 2.0,
-      finalPrice: 0,
-      teamId: null,
-      teamName: null,
-      teamImageId: null,
-      updatedAt: Date.now() - 1000 * 60 * 180,
-      isEditorPick: false,
-    },
-    {
-      playerId: 107,
-      playerName: "Hardik Pandya",
-      playerImageId: 632,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 3,
-      role: "All-Rounder",
-      capStatus: "CAPPED",
-      auctionStatus: "RETAINED",
-      basePrice: 2.0,
-      finalPrice: 16.35,
-      teamId: 1,
-      teamName: "Mumbai Indians",
-      teamImageId: 226288,
-      updatedAt: Date.now() - 1000 * 60 * 60 * 24,
-      isEditorPick: false,
-    },
-    {
-      playerId: 108,
-      playerName: "Virat Kohli",
-      playerImageId: 1413,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 1,
-      role: "Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "RETAINED",
-      basePrice: 2.0,
-      finalPrice: 21.0,
-      teamId: 3,
-      teamName: "Royal Challengers Bengaluru",
-      teamImageId: 226290,
-      updatedAt: Date.now() - 1000 * 60 * 60 * 26,
-      isEditorPick: false,
-    },
-    {
-      playerId: 109,
-      playerName: "MS Dhoni",
-      playerImageId: 265,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 4,
-      role: "WK-Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "RETAINED",
-      basePrice: 4.0,
-      finalPrice: 4.0,
-      teamId: 2,
-      teamName: "Chennai Super Kings",
-      teamImageId: 226289,
-      updatedAt: Date.now() - 1000 * 60 * 60 * 30,
-      isEditorPick: false,
-    },
-    {
-      playerId: 110,
-      playerName: "Rohit Sharma",
-      playerImageId: 576,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 1,
-      role: "Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "RETAINED",
-      basePrice: 2.0,
-      finalPrice: 16.3,
-      teamId: 1,
-      teamName: "Mumbai Indians",
-      teamImageId: 226288,
-      updatedAt: Date.now() - 1000 * 60 * 60 * 32,
-      isEditorPick: false,
-    },
-    {
-      playerId: 111,
-      playerName: "Yuzvendra Chahal",
-      playerImageId: 633,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 2,
-      role: "Bowler",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 2.0,
-      finalPrice: 18.0,
-      teamId: 8,
-      teamName: "Punjab Kings",
-      teamImageId: 226295,
-      updatedAt: Date.now() - 1000 * 60 * 200,
-      isEditorPick: false,
-    },
-    {
-      playerId: 112,
-      playerName: "Sanju Samson",
-      playerImageId: 634,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 4,
-      role: "WK-Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "RTM",
-      basePrice: 2.0,
-      finalPrice: 14.0,
-      teamId: 7,
-      teamName: "Rajasthan Royals",
-      teamImageId: 226294,
-      updatedAt: Date.now() - 1000 * 60 * 240,
-      isEditorPick: false,
-    },
-    {
-      playerId: 113,
-      playerName: "Trent Boult",
-      playerImageId: 635,
-      countryId: 5,
-      countryName: "New Zealand",
-      countryImageId: 230,
-      roleId: 2,
-      role: "Bowler",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 2.0,
-      finalPrice: 12.5,
-      teamId: 7,
-      teamName: "Rajasthan Royals",
-      teamImageId: 226294,
-      updatedAt: Date.now() - 1000 * 60 * 260,
-      isEditorPick: false,
-    },
-    {
-      playerId: 114,
-      playerName: "Rashid Khan",
-      playerImageId: 636,
-      countryId: 8,
-      countryName: "Afghanistan",
-      countryImageId: 233,
-      roleId: 3,
-      role: "All-Rounder",
-      capStatus: "CAPPED",
-      auctionStatus: "RETAINED",
-      basePrice: 2.0,
-      finalPrice: 18.0,
-      teamId: 9,
-      teamName: "Gujarat Titans",
-      teamImageId: 226296,
-      updatedAt: Date.now() - 1000 * 60 * 60 * 40,
-      isEditorPick: false,
-    },
-    {
-      playerId: 115,
-      playerName: "Nicholas Pooran",
-      playerImageId: 637,
-      countryId: 6,
-      countryName: "West Indies",
-      countryImageId: 231,
-      roleId: 4,
-      role: "WK-Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 2.0,
-      finalPrice: 21.0,
-      teamId: 10,
-      teamName: "Lucknow Super Giants",
-      teamImageId: 226297,
-      updatedAt: Date.now() - 1000 * 60 * 300,
-      isEditorPick: false,
-    },
-    {
-      playerId: 116,
-      playerName: "Wanindu Hasaranga",
-      playerImageId: 638,
-      countryId: 7,
-      countryName: "Sri Lanka",
-      countryImageId: 232,
-      roleId: 3,
-      role: "All-Rounder",
-      capStatus: "CAPPED",
-      auctionStatus: "UNSOLD",
-      basePrice: 1.5,
-      finalPrice: 0,
-      teamId: null,
-      teamName: null,
-      teamImageId: null,
-      updatedAt: Date.now() - 1000 * 60 * 340,
-      isEditorPick: false,
-    },
-    {
-      playerId: 117,
-      playerName: "Shubman Gill",
-      playerImageId: 639,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 1,
-      role: "Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "RETAINED",
-      basePrice: 2.0,
-      finalPrice: 16.5,
-      teamId: 9,
-      teamName: "Gujarat Titans",
-      teamImageId: 226296,
-      updatedAt: Date.now() - 1000 * 60 * 60 * 50,
-      isEditorPick: false,
-    },
-    {
-      playerId: 118,
-      playerName: "Marcus Stoinis",
-      playerImageId: 640,
-      countryId: 2,
-      countryName: "Australia",
-      countryImageId: 227,
-      roleId: 3,
-      role: "All-Rounder",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 2.0,
-      finalPrice: 11.0,
-      teamId: 8,
-      teamName: "Punjab Kings",
-      teamImageId: 226295,
-      updatedAt: Date.now() - 1000 * 60 * 360,
-      isEditorPick: false,
-    },
-    {
-      playerId: 119,
-      playerName: "Arshdeep Singh",
-      playerImageId: 641,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 2,
-      role: "Bowler",
-      capStatus: "CAPPED",
-      auctionStatus: "RTM",
-      basePrice: 2.0,
-      finalPrice: 18.0,
-      teamId: 8,
-      teamName: "Punjab Kings",
-      teamImageId: 226295,
-      updatedAt: Date.now() - 1000 * 60 * 380,
-      isEditorPick: false,
-    },
-    {
-      playerId: 120,
-      playerName: "Prasidh Krishna",
-      playerImageId: 642,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 2,
-      role: "Bowler",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 2.0,
-      finalPrice: 9.5,
-      teamId: 9,
-      teamName: "Gujarat Titans",
-      teamImageId: 226296,
-      updatedAt: Date.now() - 1000 * 60 * 420,
-      isEditorPick: false,
-    },
-    {
-      playerId: 121,
-      playerName: "Sherfane Rutherford",
-      playerImageId: 643,
-      countryId: 6,
-      countryName: "West Indies",
-      countryImageId: 231,
-      roleId: 1,
-      role: "Batter",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 1.0,
-      finalPrice: 2.6,
-      teamId: 9,
-      teamName: "Gujarat Titans",
-      teamImageId: 226296,
-      updatedAt: Date.now() - 1000 * 60 * 460,
-      isEditorPick: false,
-    },
-    {
-      playerId: 122,
-      playerName: "Rachin Ravindra",
-      playerImageId: 644,
-      countryId: 5,
-      countryName: "New Zealand",
-      countryImageId: 230,
-      roleId: 3,
-      role: "All-Rounder",
-      capStatus: "CAPPED",
-      auctionStatus: "SOLD",
-      basePrice: 1.5,
-      finalPrice: 1.8,
-      teamId: 2,
-      teamName: "Chennai Super Kings",
-      teamImageId: 226289,
-      updatedAt: Date.now() - 1000 * 60 * 500,
-      isEditorPick: false,
-    },
-    {
-      playerId: 123,
-      playerName: "Kagiso Rabada",
-      playerImageId: 645,
-      countryId: 4,
-      countryName: "South Africa",
-      countryImageId: 229,
-      roleId: 2,
-      role: "Bowler",
-      capStatus: "CAPPED",
-      auctionStatus: "UNSOLD",
-      basePrice: 2.0,
-      finalPrice: 0,
-      teamId: null,
-      teamName: null,
-      teamImageId: null,
-      updatedAt: Date.now() - 1000 * 60 * 520,
-      isEditorPick: false,
-    },
-    {
-      playerId: 124,
-      playerName: "Tilak Varma",
-      playerImageId: 646,
-      countryId: 1,
-      countryName: "India",
-      countryImageId: 226,
-      roleId: 1,
-      role: "Batter",
-      capStatus: "UNCAPPED",
-      auctionStatus: "DRAFTED",
-      basePrice: 0.3,
-      finalPrice: 8.0,
-      teamId: 1,
-      teamName: "Mumbai Indians",
-      teamImageId: 226288,
-      updatedAt: Date.now() - 1000 * 60 * 60 * 60,
-      isEditorPick: false,
-    },
-  ],
-};
+// TODO: point this at your real backend endpoint that returns AuctionData
+const AUCTION_API_URL = "/api/ipl/acution";
+
+async function fetchAuctionData(signal?: AbortSignal): Promise<AuctionData> {
+  const res = await fetch(AUCTION_API_URL, { signal });
+  if (!res.ok) {
+    throw new Error(`Failed to load auction data (status ${res.status})`);
+  }
+  const data: AuctionData = await res.json();
+  return data;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    HELPERS
@@ -1843,6 +1297,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
 export default function IPLAuctionPage(): React.ReactElement {
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [auction, setAuction] = useState<AuctionData | null>(null);
   const [search, setSearch] = useState<string>("");
   const [sortIndex, setSortIndex] = useState<number>(0);
   const [filterOpen, setFilterOpen] = useState<boolean>(false);
@@ -1856,21 +1312,38 @@ export default function IPLAuctionPage(): React.ReactElement {
     teams: new Set(),
   });
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 900);
-    return () => clearTimeout(t);
+  const loadAuctionData = React.useCallback((signal?: AbortSignal) => {
+    setLoading(true);
+    setError(null);
+    fetchAuctionData(signal)
+      .then((data) => {
+        setAuction(data);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setError(err instanceof Error ? err.message : "Failed to load auction data");
+        setLoading(false);
+      });
   }, []);
 
-  const activeSort = AUCTION.sortOptions[sortIndex];
+  useEffect(() => {
+    const controller = new AbortController();
+    loadAuctionData(controller.signal);
+    return () => controller.abort();
+  }, [loadAuctionData]);
+
+  const activeSort = auction?.sortOptions[sortIndex] ?? { key: "updatedAt", label: "", order: "desc" as const };
 
   const editorPicks = useMemo<Player[]>(
-    () => AUCTION.players.filter((p) => p.isEditorPick && p.editorPick),
-    []
+    () => (auction?.players ?? []).filter((p) => p.isEditorPick && p.editorPick),
+    [auction]
   );
 
   const filteredPlayers = useMemo<Player[]>(() => {
+    if (!auction) return [];
     const q = search.trim().toLowerCase();
-    let list = AUCTION.players.filter((p) => {
+    let list = auction.players.filter((p) => {
       if (q) {
         const hay = [
           p.playerName,
@@ -1919,7 +1392,7 @@ export default function IPLAuctionPage(): React.ReactElement {
     });
 
     return list;
-  }, [search, filterState, activeSort]);
+  }, [auction, search, filterState, activeSort]);
 
   const totalActiveFilters =
     filterState.countries.size +
@@ -1952,6 +1425,29 @@ export default function IPLAuctionPage(): React.ReactElement {
     });
   };
 
+  // ── Full-page error state (only when we have no data to show at all) ──
+  if (error && !auction) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center px-4">
+        <div className="max-w-sm w-full text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-rose-100 flex items-center justify-center">
+            <I.Cross className="w-8 h-8 text-rose-500" />
+          </div>
+          <h2 className="text-lg font-black text-slate-900">
+            Couldn't load auction data
+          </h2>
+          <p className="text-sm text-slate-500">{error}</p>
+          <button
+            onClick={() => loadAuctionData()}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-700 transition"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       {/* ═══ STICKY HEADER ═══ */}
@@ -1965,20 +1461,20 @@ export default function IPLAuctionPage(): React.ReactElement {
               </div>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl font-black text-slate-900 tracking-tight truncate">
-                  {AUCTION.auctionTitle}
+                  {auction?.auctionTitle ?? "IPL Auction"}
                 </h1>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span
                     className={cx(
                       "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest",
-                      auctionStatusBadge(AUCTION.auctionStatus)
+                      auctionStatusBadge(auction?.auctionStatus ?? "LIVE")
                     )}
                   >
                     <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
-                    {AUCTION.auctionStatus}
+                    {auction?.auctionStatus ?? ""}
                   </span>
                   <span className="text-[11px] font-semibold text-slate-500">
-                    {AUCTION.totalPlayers} Players · {AUCTION.totalTeams} Teams
+                    {auction?.totalPlayers ?? 0} Players · {auction?.totalTeams ?? 0} Teams
                   </span>
                 </div>
               </div>
@@ -2016,7 +1512,7 @@ export default function IPLAuctionPage(): React.ReactElement {
                 onChange={(e) => setSortIndex(Number(e.target.value))}
                 className="w-full pl-10 pr-9 py-2.5 rounded-full bg-slate-100 border border-transparent focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100 outline-none text-sm font-semibold text-slate-800 appearance-none cursor-pointer transition"
               >
-                {AUCTION.sortOptions.map((opt, i) => (
+                {(auction?.sortOptions ?? []).map((opt, i) => (
                   <option key={`${opt.key}-${opt.order}-${i}`} value={i}>
                     {opt.label}
                   </option>
@@ -2050,7 +1546,7 @@ export default function IPLAuctionPage(): React.ReactElement {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
         {/* ── SUMMARY CARDS ── */}
         <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          {loading ? (
+          {loading || !auction ? (
             Array.from({ length: 6 }).map((_, i) => (
               <SummarySkeleton key={i} />
             ))
@@ -2058,42 +1554,42 @@ export default function IPLAuctionPage(): React.ReactElement {
             <>
               <SummaryCard
                 label="Total Players"
-                value={AUCTION.totalPlayers}
+                value={auction.totalPlayers}
                 subtitle="Registered pool"
                 gradient="from-indigo-600 to-blue-700"
                 icon={<I.Users className="w-5 h-5" />}
               />
               <SummaryCard
                 label="Sold"
-                value={AUCTION.soldPlayers}
+                value={auction.soldPlayers}
                 subtitle="In squads"
                 gradient="from-emerald-500 to-teal-600"
                 icon={<I.Check className="w-5 h-5" />}
               />
               <SummaryCard
                 label="Retained"
-                value={AUCTION.retainedPlayers}
+                value={auction.retainedPlayers}
                 subtitle="Kept by teams"
                 gradient="from-blue-500 to-cyan-600"
                 icon={<I.Shield className="w-5 h-5" />}
               />
               <SummaryCard
                 label="Unsold"
-                value={AUCTION.unsoldPlayers}
+                value={auction.unsoldPlayers}
                 subtitle="Went unsold"
                 gradient="from-rose-500 to-red-600"
                 icon={<I.Cross className="w-5 h-5" />}
               />
               <SummaryCard
                 label="Overseas"
-                value={AUCTION.overseasPlayers}
+                value={auction.overseasPlayers}
                 subtitle="Non-Indian pool"
                 gradient="from-purple-600 to-fuchsia-600"
                 icon={<I.Globe className="w-5 h-5" />}
               />
               <SummaryCard
                 label="Indian"
-                value={AUCTION.indianPlayers}
+                value={auction.indianPlayers}
                 subtitle="Domestic pool"
                 gradient="from-orange-500 to-amber-600"
                 icon={<I.Flag className="w-5 h-5" />}
@@ -2147,7 +1643,7 @@ export default function IPLAuctionPage(): React.ReactElement {
                     <EditorPickCard
                       key={p.playerId}
                       player={p}
-                      currency={AUCTION.currency}
+                      currency={auction?.currency ?? ""}
                     />
                   ))}
             </div>
@@ -2172,7 +1668,7 @@ export default function IPLAuctionPage(): React.ReactElement {
                   </span>{" "}
                   of{" "}
                   <span className="font-black text-slate-800">
-                    {AUCTION.totalPlayers}
+                    {auction?.totalPlayers ?? 0}
                   </span>{" "}
                   players
                 </p>
@@ -2189,7 +1685,7 @@ export default function IPLAuctionPage(): React.ReactElement {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {loading ? (
+            {loading || !auction ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <CardSkeleton key={i} />
               ))
@@ -2200,7 +1696,7 @@ export default function IPLAuctionPage(): React.ReactElement {
                 <PlayerCard
                   key={p.playerId}
                   player={p}
-                  currency={AUCTION.currency}
+                  currency={auction.currency}
                 />
               ))
             )}
@@ -2210,7 +1706,7 @@ export default function IPLAuctionPage(): React.ReactElement {
         <footer className="pt-6 pb-8 text-center text-xs text-slate-400 font-medium">
           <p>
             Live data · Updated in real-time · IPL Auction{" "}
-            {AUCTION.auctionYear}
+            {auction?.auctionYear ?? ""}
           </p>
         </footer>
       </main>
@@ -2219,7 +1715,15 @@ export default function IPLAuctionPage(): React.ReactElement {
       <FilterPanel
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
-        filters={AUCTION.filters}
+        filters={
+          auction?.filters ?? {
+            countries: [],
+            roles: [],
+            caps: [],
+            statuses: [],
+            teams: [],
+          }
+        }
         state={filterState}
         onChange={setFilterState}
         onReset={resetFilters}
