@@ -791,7 +791,7 @@ export default function HomePage() {
   const handleTabChange = useCallback(
     (tab: NavTab) => {
       setActiveTab(tab);
-      if (tab === "Demo1") {
+      if (tab === "/ipl/auction") {
         navigate("/ipl/auction");
       } else if (tab === "Demo2") {
         navigate("/demo2");
