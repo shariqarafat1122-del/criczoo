@@ -6,6 +6,17 @@ import React, {
   useMemo,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Search,
+  X,
+  RefreshCw,
+  Home,
+  Trophy,
+  MapPin,
+  CalendarDays,
+  Clock,
+  Zap,
+} from "lucide-react";
 import CricketSchedule from "./upcoming-series";
 
 /* ─────────────────────────────────────────────
@@ -111,9 +122,6 @@ const fmtScore = (inn?: InningsScore): string => {
   return s;
 };
 
-const fmtOvers = (o?: number): string =>
-  o !== undefined ? `${o} ov` : "";
-
 const tsToDate = (ts?: number | string): string | null => {
   if (!ts) return null;
   try {
@@ -163,62 +171,62 @@ const stateConfig = (state?: string): BadgeCfg => {
   const s = (state || "").toLowerCase();
   if (s.includes("progress") || s === "in progress")
     return {
-      bg: "bg-emerald-100 dark:bg-emerald-900/40",
-      text: "text-emerald-700 dark:text-emerald-300",
-      dot: "bg-emerald-500",
-      label: "Live",
+      bg: "bg-destructive/10",
+      text: "text-destructive",
+      dot: "bg-destructive",
+      label: "LIVE",
     };
   if (s.includes("preview") || s === "preview")
     return {
-      bg: "bg-blue-100 dark:bg-blue-900/40",
-      text: "text-blue-700 dark:text-blue-300",
+      bg: "bg-primary/10",
+      text: "text-primary",
       label: "Upcoming",
     };
   if (s.includes("complete") || s === "complete")
     return {
-      bg: "bg-gray-100 dark:bg-gray-800",
-      text: "text-gray-600 dark:text-gray-400",
+      bg: "bg-muted",
+      text: "text-muted-foreground",
       label: "Completed",
     };
   if (s.includes("rain"))
     return {
-      bg: "bg-orange-100 dark:bg-orange-900/40",
-      text: "text-orange-700 dark:text-orange-300",
+      bg: "bg-accent/15",
+      text: "text-accent-foreground",
       label: "Rain",
     };
   if (s.includes("stump"))
     return {
-      bg: "bg-purple-100 dark:bg-purple-900/40",
-      text: "text-purple-700 dark:text-purple-300",
+      bg: "bg-secondary",
+      text: "text-secondary-foreground",
       label: "Stumps",
     };
   if (s.includes("draw"))
     return {
-      bg: "bg-indigo-100 dark:bg-indigo-900/40",
-      text: "text-indigo-700 dark:text-indigo-300",
+      bg: "bg-muted",
+      text: "text-muted-foreground",
       label: "Draw",
     };
   if (s.includes("cancel") || s.includes("abandon"))
     return {
-      bg: "bg-red-100 dark:bg-red-900/40",
-      text: "text-red-700 dark:text-red-300",
+      bg: "bg-destructive/10",
+      text: "text-destructive",
       label: "Cancelled",
     };
   if (s.includes("no result"))
     return {
-      bg: "bg-slate-100 dark:bg-slate-800",
-      text: "text-slate-600 dark:text-slate-400",
+      bg: "bg-muted",
+      text: "text-muted-foreground",
       label: "No Result",
     };
   if (s.includes("toss"))
     return {
-      bg: "bg-cyan-100 dark:bg-cyan-900/40",
-      text: "text-cyan-700 dark:text-cyan-300",
+      bg: "bg-accent/15",
+      text: "text-accent-foreground",
       label: "Toss",
     };
   return {
-    bg: "bg-gray-100 dark:bg-gray-800",
-    text: "text-gray-500 dark:text-gray-400",
+    bg: "bg-muted",
+    text: "text-muted-foreground",
     label: state || "—",
   };
 };
@@ -248,13 +256,10 @@ const isComplete = (state?: string): boolean =>
 ───────────────────────────────────────────── */
 const fmtBadgeCfg = (fmt?: string) => {
   const f = (fmt || "").toUpperCase();
-  if (f === "TEST")
-    return "bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 border-red-100 dark:border-red-800";
-  if (f === "ODI")
-    return "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 border-blue-100 dark:border-blue-800";
-  if (f.includes("T20") || f === "T20I")
-    return "bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 border-purple-100 dark:border-purple-800";
-  return "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400 border-gray-100 dark:border-gray-700";
+  if (f === "TEST") return "bg-foreground text-background";
+  if (f === "ODI") return "bg-primary/10 text-primary";
+  if (f.includes("T20") || f === "T20I") return "bg-accent/15 text-accent-foreground";
+  return "bg-muted text-muted-foreground";
 };
 
 /* ─────────────────────────────────────────────
@@ -273,19 +278,18 @@ const TeamLogo = React.memo(
 
     if (!url || err) {
       return (
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-xs font-black shadow-sm flex-shrink-0">
+        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-extrabold shadow-premium flex-shrink-0">
           {initials}
         </div>
       );
     }
 
     return (
-      // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={url}
+        src={url || "/placeholder.svg"}
         alt={name || ""}
         onError={() => setErr(true)}
-        className="w-12 h-12 rounded-full object-contain border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-0.5 shadow-sm flex-shrink-0"
+        className="w-12 h-12 rounded-full object-contain border border-border bg-card p-0.5 shadow-premium flex-shrink-0"
       />
     );
   }
@@ -308,7 +312,7 @@ const ScoreDisplay = React.memo(
 
     if (!inn1 && !inn2) {
       return (
-        <span className="text-xs text-gray-400 dark:text-gray-600 italic">
+        <span className="text-xs text-muted-foreground italic">
           Yet to bat
         </span>
       );
@@ -319,9 +323,7 @@ const ScoreDisplay = React.memo(
         {inn1 && (
           <span
             className={`font-bold text-sm ${
-              isBatting && !inn2
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-gray-800 dark:text-gray-200"
+              isBatting && !inn2 ? "text-primary" : "text-foreground"
             }`}
           >
             {fmtScore(inn1)}
@@ -330,9 +332,7 @@ const ScoreDisplay = React.memo(
         {inn2 && (
           <span
             className={`font-bold text-sm ${
-              isBatting
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-gray-800 dark:text-gray-200"
+              isBatting ? "text-primary" : "text-foreground"
             }`}
           >
             {fmtScore(inn2)}
@@ -348,23 +348,23 @@ ScoreDisplay.displayName = "ScoreDisplay";
    Skeleton Card
 ───────────────────────────────────────────── */
 const SkeletonCard = () => (
-  <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 animate-pulse">
+  <div className="bg-card rounded-lg shadow-premium border border-border p-4 animate-pulse">
     <div className="flex items-center justify-between mb-3">
-      <div className="h-3 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
-      <div className="h-5 w-12 bg-gray-100 dark:bg-gray-800 rounded-full" />
+      <div className="h-3 w-32 bg-muted rounded" />
+      <div className="h-5 w-12 bg-muted rounded-full" />
     </div>
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">
-        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700" />
-        <div className="h-4 w-8 bg-gray-200 dark:bg-gray-700 rounded" />
+        <div className="w-10 h-10 rounded-full bg-muted" />
+        <div className="h-4 w-8 bg-muted rounded" />
       </div>
-      <div className="h-3 w-6 bg-gray-100 dark:bg-gray-800 rounded" />
+      <div className="h-3 w-6 bg-muted rounded" />
       <div className="flex items-center gap-2">
-        <div className="h-4 w-8 bg-gray-200 dark:bg-gray-700 rounded" />
-        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className="h-4 w-8 bg-muted rounded" />
+        <div className="w-10 h-10 rounded-full bg-muted" />
       </div>
     </div>
-    <div className="h-3 w-full bg-gray-100 dark:bg-gray-800 rounded" />
+    <div className="h-3 w-full bg-muted rounded" />
   </div>
 );
 
@@ -401,21 +401,21 @@ const MatchCard = React.memo(
     return (
       <button
         onClick={onClick}
-        className="w-full text-left group bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800 hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        className="w-full text-left group bg-card rounded-lg shadow-premium border border-border overflow-hidden hover:shadow-premium-lg hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {/* Top strip — series + format + state badge */}
-        <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+        <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-2">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[200px]">
+            <span className="text-xs font-medium text-muted-foreground truncate max-w-[200px]">
               {info?.seriesName || "—"}
             </span>
             {info?.matchDesc && (
-              <span className="text-xs text-gray-300 dark:text-gray-600 hidden sm:inline">
+              <span className="text-xs text-muted-foreground/50 hidden sm:inline">
                 ·
               </span>
             )}
             {info?.matchDesc && (
-              <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:inline truncate max-w-[120px]">
+              <span className="text-xs text-muted-foreground hidden sm:inline truncate max-w-[120px]">
                 {info.matchDesc}
               </span>
             )}
@@ -423,7 +423,7 @@ const MatchCard = React.memo(
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {info?.matchFormat && (
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded border ${fmtBadgeCfg(
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide ${fmtBadgeCfg(
                   info.matchFormat
                 )}`}
               >
@@ -431,11 +431,11 @@ const MatchCard = React.memo(
               </span>
             )}
             <span
-              className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${badge.bg} ${badge.text}`}
+              className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide ${badge.bg} ${badge.text}`}
             >
               {live && badge.dot && (
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${badge.dot} animate-pulse`}
+                  className={`w-1.5 h-1.5 rounded-full ${badge.dot} animate-live-pulse`}
                 />
               )}
               {badge.label}
@@ -444,7 +444,7 @@ const MatchCard = React.memo(
         </div>
 
         {/* Teams + Scores */}
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-3.5">
           <div className="flex items-center justify-between gap-3">
             {/* Team 1 */}
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -452,16 +452,12 @@ const MatchCard = React.memo(
               <div className="min-w-0">
                 <div
                   className={`font-bold text-sm sm:text-base truncate ${
-                    isBattingT1
-                      ? "text-emerald-700 dark:text-emerald-400"
-                      : "text-gray-800 dark:text-gray-200"
+                    isBattingT1 ? "text-primary" : "text-foreground"
                   }`}
                 >
                   {team1?.shortName || team1?.name || "—"}
                   {isBattingT1 && (
-                    <span className="ml-1 text-[10px] text-emerald-500">
-                      ●
-                    </span>
+                    <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary align-middle" />
                   )}
                 </div>
                 <ScoreDisplay
@@ -473,7 +469,7 @@ const MatchCard = React.memo(
 
             {/* VS */}
             <div className="flex flex-col items-center flex-shrink-0">
-              <span className="text-xs font-black text-gray-300 dark:text-gray-600">
+              <span className="text-[10px] font-extrabold text-muted-foreground/60 tracking-widest">
                 VS
               </span>
             </div>
@@ -483,15 +479,11 @@ const MatchCard = React.memo(
               <div className="min-w-0 text-right">
                 <div
                   className={`font-bold text-sm sm:text-base truncate ${
-                    isBattingT2
-                      ? "text-emerald-700 dark:text-emerald-400"
-                      : "text-gray-800 dark:text-gray-200"
+                    isBattingT2 ? "text-primary" : "text-foreground"
                   }`}
                 >
                   {isBattingT2 && (
-                    <span className="mr-1 text-[10px] text-emerald-500">
-                      ●
-                    </span>
+                    <span className="mr-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary align-middle" />
                   )}
                   {team2?.shortName || team2?.name || "—"}
                 </div>
@@ -509,38 +501,39 @@ const MatchCard = React.memo(
 
         {/* Status / Result / Countdown strip */}
         <div
-          className={`px-4 py-2 border-t border-gray-50 dark:border-gray-800 ${
+          className={`px-4 py-2.5 border-t border-border ${
             live
-              ? "bg-emerald-50/60 dark:bg-emerald-900/10"
+              ? "bg-primary/5"
               : complete
-              ? "bg-gray-50/60 dark:bg-gray-800/20"
+              ? "bg-muted/50"
               : preview
-              ? "bg-blue-50/60 dark:bg-blue-900/10"
-              : "bg-gray-50/30 dark:bg-gray-800/10"
+              ? "bg-secondary/60"
+              : "bg-muted/30"
           }`}
         >
           {info?.status ? (
             <p
-              className={`text-xs font-medium leading-snug line-clamp-2 ${
+              className={`text-xs font-semibold leading-snug line-clamp-2 ${
                 live
-                  ? "text-emerald-700 dark:text-emerald-400"
+                  ? "text-primary"
                   : complete
-                  ? "text-gray-600 dark:text-gray-400"
-                  : "text-gray-500 dark:text-gray-400"
+                  ? "text-foreground/80"
+                  : "text-muted-foreground"
               }`}
             >
               {info.status}
             </p>
           ) : cd ? (
-            <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-              🕐 {cd}
+            <p className="flex items-center gap-1 text-xs font-semibold text-primary">
+              <Clock className="w-3 h-3" aria-hidden="true" />
+              {cd}
             </p>
           ) : null}
 
           {/* Venue */}
           {(info?.venueInfo?.name || info?.venueInfo?.city) && (
-            <p className="text-[10px] text-gray-400 dark:text-gray-600 mt-0.5 truncate">
-              📍{" "}
+            <p className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1 truncate">
+              <MapPin className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
               {[info.venueInfo.name, info.venueInfo.city]
                 .filter(Boolean)
                 .join(", ")}
@@ -549,14 +542,15 @@ const MatchCard = React.memo(
 
           {/* Start date */}
           {preview && startTs && (
-            <p className="text-[10px] text-gray-400 dark:text-gray-600 mt-0.5">
-              🗓 {tsToDate(startTs)}
+            <p className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+              <CalendarDays className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+              {tsToDate(startTs)}
             </p>
           )}
         </div>
 
         {/* Hover accent bottom line */}
-        <div className="h-0.5 w-0 group-hover:w-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-300 rounded-b-2xl" />
+        <div className="h-0.5 w-0 group-hover:w-full bg-primary transition-all duration-300" />
       </button>
     );
   }
@@ -575,22 +569,24 @@ const SearchBar = React.memo(
     onChange: (v: string) => void;
   }) => (
     <div className="relative flex-1 max-w-xs">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm pointer-events-none">
-        🔍
-      </span>
+      <Search
+        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+        aria-hidden="true"
+      />
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search teams, series…"
-        className="w-full pl-9 pr-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+        className="w-full pl-9 pr-8 py-2 text-sm bg-muted border border-transparent rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:bg-card transition-all"
       />
       {value && (
         <button
           onClick={() => onChange("")}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-xs"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Clear search"
         >
-          ✕
+          <X className="w-3.5 h-3.5" />
         </button>
       )}
     </div>
@@ -618,19 +614,19 @@ const FilterTab = React.memo(
   }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+      className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-150 flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
         active
-          ? "bg-emerald-600 text-white shadow-sm"
-          : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700"
+          ? "bg-primary text-primary-foreground shadow-premium"
+          : "bg-card text-muted-foreground border border-border hover:border-primary/40 hover:text-foreground"
       }`}
     >
       {label}
       {count > 0 && (
         <span
-          className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+          className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
             active
-              ? "bg-white/20 text-white"
-              : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+              ? "bg-primary-foreground/20 text-primary-foreground"
+              : "bg-muted text-muted-foreground"
           }`}
         >
           {count}
@@ -644,40 +640,36 @@ FilterTab.displayName = "FilterTab";
 /* ─────────────────────────────────────────────
    Bottom Navigation
 ───────────────────────────────────────────── */
-type NavTab = "Home" | "Series" | "Demo1" | "Demo2";
+type NavTab = "Home" | "Series";
 
 const BottomNavItem = React.memo(
   ({
     active,
-    icon,
+    icon: Icon,
     label,
     onClick,
   }: {
     active: boolean;
-    icon: string;
+    icon: React.ComponentType<{ className?: string }>;
     label: string;
     onClick: () => void;
   }) => (
     <button
       onClick={onClick}
-      className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors duration-150 focus:outline-none ${
+      className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-2.5 transition-colors duration-150 focus:outline-none ${
         active
-          ? "text-emerald-600 dark:text-emerald-400"
-          : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+          ? "text-primary"
+          : "text-muted-foreground hover:text-foreground"
       }`}
     >
       {active && (
-        <span className="absolute top-0 w-8 h-0.5 bg-emerald-600 dark:bg-emerald-400 rounded-full" />
+        <span className="absolute top-0 w-8 h-0.5 bg-primary rounded-full" />
       )}
+      <Icon
+        className={`w-5 h-5 transition-transform ${active ? "scale-110" : ""}`}
+      />
       <span
-        className={`text-lg leading-none transition-transform ${
-          active ? "scale-110" : ""
-        }`}
-      >
-        {icon}
-      </span>
-      <span
-        className={`text-[10px] font-semibold ${active ? "font-bold" : ""}`}
+        className={`text-[10px] ${active ? "font-bold" : "font-semibold"}`}
       >
         {label}
       </span>
@@ -694,31 +686,19 @@ const BottomNav = React.memo(
     active: NavTab;
     onChange: (t: NavTab) => void;
   }) => (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 shadow-[0_-2px_10px_rgba(0,0,0,0.04)] pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur border-t border-border shadow-[0_-2px_16px_rgba(16,44,34,0.06)] pb-[env(safe-area-inset-bottom)]">
       <div className="max-w-5xl mx-auto flex items-stretch">
         <BottomNavItem
           active={active === "Home"}
-          icon="🏠"
-          label="Home"
+          icon={Home}
+          label="Matches"
           onClick={() => onChange("Home")}
         />
         <BottomNavItem
           active={active === "Series"}
-          icon="🏆"
+          icon={Trophy}
           label="Series"
           onClick={() => onChange("Series")}
-        />
-        <BottomNavItem
-          active={active === "Demo1"}
-          icon="⭐"
-          label="Demo 1"
-          onClick={() => onChange("Demo1")}
-        />
-        <BottomNavItem
-          active={active === "Demo2"}
-          icon="➕"
-          label="Demo 2"
-          onClick={() => onChange("Demo2")}
         />
       </div>
     </nav>
@@ -735,18 +715,11 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("All");
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<NavTab>("Home");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  /* toggle dark */
-  useEffect(() => {
-    if (darkMode) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-  }, [darkMode]);
 
   /* fetch */
   const fetchData = useCallback(async (silent = false) => {
@@ -786,20 +759,6 @@ export default function HomePage() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [fetchData]);
-
-  /* handle bottom nav tab change */
-  const handleTabChange = useCallback(
-    (tab: NavTab) => {
-      setActiveTab(tab);
-      if (tab === "Demo1") {
-        navigate("/demo1");
-      } else if (tab === "Demo2") {
-        navigate("/demo2");
-      }
-      // Home and Series render inline on this same page — no navigation needed
-    },
-    [navigate]
-  );
 
   /* all matches */
   const allMatches: MatchItem[] = useMemo(
@@ -867,8 +826,12 @@ export default function HomePage() {
   /* live count for header pulse */
   const liveCount = counts.Live;
 
+  const handleTabChange = useCallback((tab: NavTab) => {
+    setActiveTab(tab);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors duration-300">
+    <div className="min-h-screen bg-background">
       {activeTab === "Series" ? (
         <div className="pb-20">
           <CricketSchedule />
@@ -876,27 +839,23 @@ export default function HomePage() {
       ) : (
         <>
       {/* ─── App Bar ─── */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 shadow-sm">
-        {/* Green top stripe */}
-        <div className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-500 h-1" />
-
+      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur border-b border-border">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-3 flex items-center gap-3 flex-wrap sm:flex-nowrap">
           {/* Logo / Brand */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-black text-sm shadow-sm">
-              🏏
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-premium">
+              <Zap className="w-5 h-5 text-primary-foreground" aria-hidden="true" />
             </div>
-            <span className="font-black text-gray-900 dark:text-white text-lg tracking-tight hidden sm:block">
-              Cricket
-              <span className="text-emerald-600">Live</span>
+            <span className="font-extrabold text-foreground text-lg tracking-tight hidden sm:block">
+              Cric<span className="text-primary">Zoo</span>
             </span>
           </div>
 
           {/* Live pulse */}
           {liveCount > 0 && (
-            <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-full px-2.5 py-1 flex-shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center gap-1.5 bg-destructive/10 rounded-full px-2.5 py-1 flex-shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-live-pulse" />
+              <span className="text-xs font-bold text-destructive">
                 {liveCount} Live
               </span>
             </div>
@@ -909,7 +868,7 @@ export default function HomePage() {
 
           {/* Last updated */}
           {lastUpdated && (
-            <span className="text-[10px] text-gray-400 dark:text-gray-600 flex-shrink-0 hidden md:block">
+            <span className="text-[10px] text-muted-foreground flex-shrink-0 hidden md:block">
               {lastUpdated.toLocaleTimeString("en-IN", {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -922,28 +881,17 @@ export default function HomePage() {
           <button
             onClick={() => fetchData(true)}
             disabled={refreshing}
-            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all disabled:opacity-50"
+            className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-muted hover:bg-secondary text-muted-foreground hover:text-primary transition-all disabled:opacity-50"
             aria-label="Refresh"
           >
-            <span
-              className={`text-sm ${refreshing ? "animate-spin" : ""}`}
-            >
-              🔄
-            </span>
-          </button>
-
-          {/* Dark mode */}
-          <button
-            onClick={() => setDarkMode((d) => !d)}
-            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
-            aria-label="Toggle dark mode"
-          >
-            {darkMode ? "☀️" : "🌙"}
+            <RefreshCw
+              className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+            />
           </button>
         </div>
 
         {/* Filter tabs */}
-        <div className="max-w-5xl mx-auto px-3 sm:px-4 pb-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
           {FILTERS.map((f) => (
             <FilterTab
               key={f}
@@ -957,10 +905,10 @@ export default function HomePage() {
       </header>
 
       {/* ─── Main ─── */}
-      <main className="max-w-5xl mx-auto px-3 sm:px-4 py-4 pb-20">
+      <main className="max-w-5xl mx-auto px-3 sm:px-4 py-5 pb-24">
         {/* Loading */}
         {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(9)].map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -970,17 +918,19 @@ export default function HomePage() {
         {/* Error */}
         {!loading && error && (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="text-5xl">🚨</div>
+            <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
+              <X className="w-6 h-6 text-destructive" aria-hidden="true" />
+            </div>
             <div className="text-center">
-              <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">
+              <p className="font-bold text-foreground mb-1">
                 Failed to load matches
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 {error}
               </p>
               <button
                 onClick={() => fetchData(false)}
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                className="px-6 py-2.5 bg-primary hover:opacity-90 text-primary-foreground rounded-full text-sm font-bold transition-opacity shadow-premium"
               >
                 Try Again
               </button>
@@ -991,16 +941,18 @@ export default function HomePage() {
         {/* Empty */}
         {!loading && !error && visible.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <div className="text-5xl">🏏</div>
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+              <Search className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
+            </div>
             <div className="text-center">
-              <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">
+              <p className="font-bold text-foreground mb-1">
                 {search
                   ? `No matches found for "${search}"`
                   : filter !== "All"
                   ? `No ${filter.toLowerCase()} matches right now`
                   : "No matches available"}
               </p>
-              <p className="text-sm text-gray-400 dark:text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 {search
                   ? "Try a different search term"
                   : "Check back soon!"}
@@ -1012,7 +964,7 @@ export default function HomePage() {
                   setSearch("");
                   setFilter("All");
                 }}
-                className="px-4 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-xl text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors mt-1"
+                className="px-5 py-2 bg-secondary text-secondary-foreground rounded-full text-sm font-semibold hover:bg-muted transition-colors mt-1"
               >
                 Clear filters
               </button>
@@ -1024,20 +976,20 @@ export default function HomePage() {
         {!loading && !error && visible.length > 0 && (
           <>
             {/* result count */}
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-400 dark:text-gray-600">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs font-medium text-muted-foreground">
                 {visible.length} match{visible.length !== 1 ? "es" : ""}
                 {filter !== "All" ? ` · ${filter}` : ""}
                 {search ? ` · "${search}"` : ""}
               </p>
               {refreshing && (
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium animate-pulse">
+                <span className="text-xs text-primary font-semibold animate-pulse">
                   Refreshing…
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {visible.map((match, i) => (
                 <MatchCard
                   key={match?.matchInfo?.matchId ?? i}
@@ -1053,7 +1005,7 @@ export default function HomePage() {
 
         {/* Footer */}
         {!loading && (data || error) && (
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-2 text-[10px] text-gray-400 dark:text-gray-700 pb-4">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-2 text-[10px] text-muted-foreground pb-4">
             <span>
               {lastUpdated
                 ? `Last updated: ${lastUpdated.toLocaleString("en-IN", {

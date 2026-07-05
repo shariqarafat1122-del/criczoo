@@ -2,14 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Light premium theme */
+  --background: 40 20% 97%; /* #f8f7f4 off-white */
+  --foreground: 158 30% 10%; /* deep green-black */
+  --card: 0 0% 100%;
+  --card-foreground: 158 30% 10%;
+  --primary: 158 84% 24%; /* rich emerald green */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 158 16% 94%;
+  --secondary-foreground: 158 30% 14%;
+  --muted: 40 12% 93%;
+  --muted-foreground: 158 8% 42%;
+  --accent: 42 74% 46%; /* refined gold */
+  --accent-foreground: 158 30% 10%;
+  --destructive: 0 72% 46%; /* live red */
+  --destructive-foreground: 0 0% 100%;
+  --border: 158 10% 88%;
+  --input: 158 10% 88%;
+  --ring: 158 84% 24%;
+  --radius: 1rem;
+}
+
 * {
   box-sizing: border-box;
 }
 
+html {
+  background-color: hsl(var(--background));
+}
+
 body {
-  background-color: #0a0612;
-  color: white;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle premium card shadow */
+.shadow-premium {
+  box-shadow: 0 1px 2px rgba(16, 44, 34, 0.04), 0 4px 16px rgba(16, 44, 34, 0.06);
+}
+
+.shadow-premium-lg {
+  box-shadow: 0 2px 4px rgba(16, 44, 34, 0.05), 0 12px 32px rgba(16, 44, 34, 0.1);
+}
+
+/* Live pulse dot */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.animate-live-pulse {
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
+
+/* Hide scrollbars on horizontal scroll rows */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
