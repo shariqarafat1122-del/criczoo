@@ -96,7 +96,7 @@ interface AuctionData {
    ═══════════════════════════════════════════════════════════════════════ */
 
 // TODO: point this at your real backend endpoint that returns AuctionData
-const AUCTION_API_URL = "/api/ipl/acution";
+const AUCTION_API_URL = "/api/ipl/auction";
 
 async function fetchAuctionData(signal?: AbortSignal): Promise<AuctionData> {
   const res = await fetch(AUCTION_API_URL, { signal });
