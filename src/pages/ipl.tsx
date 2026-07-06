@@ -212,6 +212,225 @@ function normalizeAuctionData(raw: unknown): AuctionData {
   };
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   CRICBUZZ RAW PAYLOAD ADAPTER
+   ═══════════════════════════════════════════════════════════════════════
+   The live backend (Cricbuzz auction feed) returns a completely different
+   shape from what this UI's AuctionData model expects: player list is
+   under `auctionPlayersList` (not `players`), prices are formatted strings
+   like "2.40 Cr" / "30.00 L" / "--" (not numbers), statuses are lowercase
+   ("sold"/"unsold"/"traded"), and filter/sort option shapes differ too.
+   This adapter converts the raw Cricbuzz JSON into the shape
+   normalizeAuctionData() expects, so nothing downstream has to change. */
+
+/** Parses a price string like "2.40 Cr", "30.00 L", or "--" into a plain
+ * number of Crores (matching this UI's `currency: "Cr"` convention). */
+function parseCricbuzzPrice(v: unknown): number {
+  if (typeof v !== "string") return 0;
+  const trimmed = v.trim();
+  if (!trimmed || trimmed === "--") return 0;
+  const match = trimmed.match(/^([\d.]+)\s*(Cr|L)?$/i);
+  if (!match) return 0;
+  const num = parseFloat(match[1]);
+  if (!Number.isFinite(num)) return 0;
+  const unit = (match[2] || "Cr").toLowerCase();
+  // Normalize Lakhs to Crores so all prices share one unit (1 Cr = 100 L)
+  return unit === "l" ? num / 100 : num;
+}
+
+/** Maps Cricbuzz's lowercase auctionStatus values to this UI's enum. */
+function mapCricbuzzAuctionStatus(
+  v: unknown
+): Player["auctionStatus"] {
+  const s = typeof v === "string" ? v.toLowerCase() : "";
+  switch (s) {
+    case "sold":
+      return "SOLD";
+    case "retained":
+      return "RETAINED";
+    case "rtm":
+      return "RTM";
+    case "drafted":
+    case "replacement":
+    case "traded":
+      return "DRAFTED";
+    case "unsold":
+    default:
+      return "UNSOLD";
+  }
+}
+
+/** Converts one raw Cricbuzz player record into this UI's Player shape. */
+function adaptCricbuzzPlayer(p: any): Partial<Player> {
+  const finalPrice = parseCricbuzzPrice(p?.auctionPrice);
+  const basePrice = parseCricbuzzPrice(p?.basePrice);
+  const auctionStatus = mapCricbuzzAuctionStatus(p?.auctionStatus);
+  const teamId = typeof p?.playsFor === "number" ? p.playsFor : null;
+  const teamName = typeof p?.playsForTeam === "string" ? p.playsForTeam : null;
+
+  // updatedTime arrives as a unix-seconds string ("1773148659")
+  const updatedAtRaw = p?.updatedTime;
+  const updatedAt =
+    typeof updatedAtRaw === "string" && /^\d+$/.test(updatedAtRaw)
+      ? parseInt(updatedAtRaw, 10) * 1000
+      : typeof updatedAtRaw === "number"
+      ? updatedAtRaw * 1000
+      : Date.now();
+
+  const hasIntro = Array.isArray(p?.playerIntro) && p.playerIntro.length > 0;
+
+  return {
+    playerId: typeof p?.playerId === "number" ? p.playerId : undefined,
+    playerName: p?.playerName,
+    playerImageId: p?.playerImageId,
+    countryId: p?.countryId,
+    countryName: p?.country,
+    countryImageId: p?.countryId, // Cricbuzz doesn't send a separate country image id per-player
+    roleId: 0,
+    role: p?.role,
+    capStatus: p?.cappedStatus === "CAPPED" ? "CAPPED" : "UNCAPPED",
+    auctionStatus,
+    basePrice,
+    finalPrice,
+    teamId,
+    teamName,
+    teamImageId: typeof p?.teamImageId === "number" ? p.teamImageId : null,
+    updatedAt,
+    // Treat players with a playerIntro blurb as editor's picks so the
+    // "Editor's Picks" rail has content; tag chosen heuristically by status.
+    isEditorPick: hasIntro,
+    editorPick: hasIntro
+      ? {
+          label: "Editor's Pick",
+          tag:
+            auctionStatus === "SOLD" && finalPrice >= basePrice * 1.5
+              ? "SMART_BUY"
+              : auctionStatus === "SOLD"
+              ? "TOP_PICK"
+              : "SURPRISE_PICK",
+          intro: p.playerIntro,
+        }
+      : undefined,
+  };
+}
+
+/** Converts the Cricbuzz `filters` array (list of filter groups with
+ * differing key/label/options shapes) into this UI's Filters shape. */
+function adaptCricbuzzFilters(raw: any): Partial<Filters> {
+  const groups: any[] = Array.isArray(raw?.filters) ? raw.filters : [];
+  const byKey = (key: string) => groups.find((g) => g?.key === key);
+
+  const countryGroup = byKey("countryId");
+  const countries: Country[] = Array.isArray(countryGroup?.options)
+    ? countryGroup.options.map((o: any) => ({
+        countryId: Number(o.value),
+        name: o.label,
+        imageId: o.imageId ?? 0,
+      }))
+    : [];
+
+  const roleGroup = byKey("role");
+  const roles: Role[] = Array.isArray(roleGroup?.options)
+    ? roleGroup.options.map((o: any, i: number) => ({
+        roleId: i + 1,
+        name: o.label,
+      }))
+    : [];
+
+  const capGroup = byKey("cap");
+  const caps: CapStatus[] = Array.isArray(capGroup?.options)
+    ? capGroup.options.map((o: any, i: number) => ({
+        capId: i + 1,
+        name: o.label,
+      }))
+    : [];
+
+  const statusGroup = byKey("status");
+  const statuses: Status[] = Array.isArray(statusGroup?.options)
+    ? statusGroup.options.map((o: any, i: number) => ({
+        statusId: i + 1,
+        name: o.label,
+      }))
+    : [];
+
+  const teamGroup = byKey("teamId");
+  const teams: Team[] = Array.isArray(teamGroup?.options)
+    ? teamGroup.options.map((o: any) => ({
+        teamId: Number(o.value),
+        teamName: o.label,
+        teamShortName: o.label,
+        teamImageId: o.imageId ?? 0,
+      }))
+    : [];
+
+  return { countries, roles, caps, statuses, teams };
+}
+
+/** Converts Cricbuzz's `sort.options` (value1/value2/label) into this
+ * UI's SortOption[] (key/label/order). */
+function adaptCricbuzzSortOptions(raw: any): SortOption[] {
+  const options: any[] = Array.isArray(raw?.sort?.options) ? raw.sort.options : [];
+  return options
+    .filter((o) => o && typeof o.label === "string")
+    .map((o) => ({
+      key: typeof o.value1 === "string" ? o.value1 : o.label,
+      label: o.label,
+      order: o.value2 === "ASC" ? "asc" : "desc",
+    }));
+}
+
+/** Top-level adapter: raw Cricbuzz JSON -> the shape normalizeAuctionData
+ * expects. If the payload doesn't look like a Cricbuzz payload (e.g. it's
+ * already in the expected shape), it's passed through untouched. */
+function adaptRawAuctionPayload(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object") return raw;
+  const d = raw as any;
+
+  // Already in the expected shape (has a `players` array) -> pass through.
+  if (Array.isArray(d.players)) return raw;
+
+  // Not a recognizable Cricbuzz payload either -> pass through and let
+  // normalizeAuctionData's own defensive defaults handle it.
+  if (!Array.isArray(d.auctionPlayersList)) return raw;
+
+  const players = d.auctionPlayersList.map(adaptCricbuzzPlayer);
+  const filters = adaptCricbuzzFilters(d);
+  const sortOptions = adaptCricbuzzSortOptions(d);
+
+  const soldPlayers = players.filter((p: any) => p.auctionStatus === "SOLD").length;
+  const retainedPlayers = players.filter((p: any) => p.auctionStatus === "RETAINED").length;
+  const unsoldPlayers = players.filter((p: any) => p.auctionStatus === "UNSOLD").length;
+  const overseasPlayers = d.auctionPlayersList.filter(
+    (p: any) => p?.isPlayerOverseas === true
+  ).length;
+  const indianPlayers = players.length - overseasPlayers;
+
+  const yearMatch =
+    typeof d.auctionTitle === "string" ? d.auctionTitle.match(/(\d{4})/) : null;
+
+  return {
+    success: true,
+    auctionTitle: d.auctionTitle,
+    auctionYear: yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear(),
+    auctionStatus:
+      typeof d.currentStatus === "string" &&
+      d.currentStatus.toLowerCase().includes("completed")
+        ? "COMPLETED"
+        : "LIVE",
+    currency: "Cr",
+    totalPlayers: players.length,
+    soldPlayers,
+    retainedPlayers,
+    unsoldPlayers,
+    overseasPlayers,
+    indianPlayers,
+    totalTeams: filters.teams?.length ?? 0,
+    sortOptions,
+    filters,
+    players,
+  };
+}
+
 async function fetchAuctionData(signal?: AbortSignal): Promise<AuctionData> {
   let res: Response;
   try {
@@ -234,7 +453,7 @@ async function fetchAuctionData(signal?: AbortSignal): Promise<AuctionData> {
     throw new Error("The auction server returned an invalid response.");
   }
 
-  return normalizeAuctionData(json);
+  return normalizeAuctionData(adaptRawAuctionPayload(json));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
