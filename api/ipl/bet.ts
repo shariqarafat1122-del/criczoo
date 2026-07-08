@@ -1,6 +1,5 @@
 export default async function handler(req: any, res: any) {
   try {
-    const { matchId } = req.query;
 
     const response = await fetch(
       "https://betadda.vercel.app/api/poker/create"),
